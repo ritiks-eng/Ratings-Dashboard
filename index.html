@@ -1,0 +1,326 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Ratings Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Google Charts -->
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <!-- CSV parser (Papa Parse) -->
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+  <style>
+    :root{--bg:#f5f5f7;--card:#fff;--text:#111;--muted:#6e6e73;--ring:rgba(0,0,0,.08);--accent:#0071e3;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:18px}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial;background:linear-gradient(180deg,#fafafa 0%,var(--bg) 100%);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(180%) blur(12px);background:rgba(255,255,255,.7);border-bottom:1px solid rgba(0,0,0,.06)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}.title{display:flex;gap:12px;align-items:baseline} h1{font-size:28px;margin:8px 0;font-weight:700;letter-spacing:-.02em}.subtitle{color:var(--muted);font-size:14px}
+    .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-4{grid-template-columns:repeat(4,1fr)}}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+    .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.control{display:grid;gap:6px;min-width:180px}
+    label{font-size:12px;color:var(--muted)} input,select,button{appearance:none;background:#fff;border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font:inherit}
+    input:focus,select:focus{box-shadow:0 0 0 4px rgba(0,113,227,.15);border-color:var(--accent)}
+    button.primary{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
+    .kpi{display:grid;gap:4px}.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:28px;font-weight:700}.kpi .sub{color:var(--muted);font-size:12px}
+    .chart{height:320px}.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--ring)} table{border-collapse:collapse;width:100%;background:#fff}
+    th,td{padding:10px 12px;border-bottom:1px solid #efefef;font-size:13px} th{text-align:left;color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
+    .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#eef5ff;color:#0b5bd3;border:1px solid #d8e7ff}
+    .muted{color:#6e6e73}.sep{height:1px;background:rgba(0,0,0,.06);margin:12px 0}.pager{display:flex;gap:8px;align-items:center}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="title">
+        <h1>Ratings Dashboard</h1>
+        <span class="subtitle">Apple-inspired • Live from Google Sheets</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap" style="padding-top:20px;">
+    <div class="card">
+      <div class="controls">
+        <div class="control"><label>From</label><input type="date" id="dateFrom"></div>
+        <div class="control"><label>To</label><input type="date" id="dateTo"></div>
+        <div class="control" style="min-width:260px"><label>Source Sheet</label><select id="sourceFilter"><option value="">All sources</option></select></div>
+        <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Only Flagged ≤ 4 (D/E/F)</span></label></div>
+        <div class="control"><label>&nbsp;</label><button class="primary" id="applyBtn">Apply</button></div>
+      </div>
+    </div>
+
+    <div class="grid grid-4" style="margin-top:16px;">
+      <div class="card kpi"><div class="label">Avg D</div><div class="value" id="avgD">—</div></div>
+      <div class="card kpi"><div class="label">Avg E</div><div class="value" id="avgE">—</div></div>
+      <div class="card kpi"><div class="label">Avg F</div><div class="value" id="avgF">—</div></div>
+      <div class="card kpi"><div class="label">% Flagged</div><div class="value" id="pctFlagged">—</div><div class="sub muted" id="cntFlagged">—</div></div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card"><div class="label muted" style="margin-bottom:6px;">Trend (daily avg)</div><div class="chart" id="trendChart"></div></div>
+      <div class="card"><div class="label muted" style="margin-bottom:6px;">Distribution</div><div class="chart" id="distChart"></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="label muted">Rows</div>
+        <div class="pager">
+          <span class="badge" id="rowCount">0</span>
+          <button id="prevBtn">Prev</button>
+          <span id="pageInfo" class="muted">–</span>
+          <button id="nextBtn">Next</button>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ==== CONFIG ====
+    const SHEET_ID = "1WmEth7sgYjN1h0CbhHwkmUTVGzyAH0P9OpG1_5T0IsQ";
+    // Add your subsheets here (name + gid). Open each tab and copy gid=... from the URL.
+    const TABS = [
+      { name: "FR Offline", gid: "XXXXX" },
+      { name: "FR Pro",     gid: "XXXXX" },
+      { name: "FR B1 Pre",  gid: "XXXXX" },
+      { name: "FR B2 Pre",  gid: "XXXXX" },
+      { name: "FM Pre",     gid: "XXXXX" },
+      { name: "PM Pre",     gid: "XXXXX" },
+      { name: "TX Pre",     gid: "XXXXX" },
+      { name: "AA Pre",     gid: "XXXXX" },
+      { name: "SBL Pre",    gid: "XXXXX" },
+      { name: "SBR Pre",    gid: "XXXXX" },
+      { name: "AAA Pre",    gid: "XXXXX" },
+      { name: "APM Pre",    gid: "XXXXX" },
+      { name: "AFM Pre",    gid: "XXXXX" },
+      { name: "AA Pro",     gid: "XXXXX" },
+      { name: "FM Pro",     gid: "XXXXX" },
+      { name: "FA Pro",     gid: "XXXXX" }
+    ];
+    // Column assumptions in every tab:
+    const TIMESTAMP_HEADER = "Timestamp";   // change if your timestamp header text differs
+    const RATING_COLS = ["D","E","F"];      // rating columns by letter (must exist in each tab)
+
+    // Pagination
+    let page = 1, pageSize = 200;
+    let MASTER = [];    // array of rows (objects)
+    let HEADERS = [];   // header names in order
+
+    // Charts
+    google.charts.load("current", {"packages":["corechart"]});
+
+    document.addEventListener("DOMContentLoaded", () => {
+      google.charts.setOnLoadCallback(init);
+      document.getElementById("applyBtn").addEventListener("click", () => { page = 1; renderAll(); });
+      document.getElementById("prevBtn").addEventListener("click", () => { if (page>1){ page--; renderTable(); } });
+      document.getElementById("nextBtn").addEventListener("click", () => { if ((page*pageSize) < filteredRows().length){ page++; renderTable(); } });
+    });
+
+    async function init(){
+      // Fetch all tabs as CSV
+      const datasets = await Promise.all(TABS.map(t => fetchCSV(t)));
+      // Combine
+      const combined = [];
+      let headerRef = null;
+
+      datasets.forEach(({tabName, headers, rows}) => {
+        if (!headers.length) return;
+        if (!headerRef) headerRef = headers.slice();
+        // Map rows to objects, add Source Sheet
+        rows.forEach(r => {
+          const obj = {};
+          headerRef.forEach((h,i)=> obj[h] = r[i] ?? "");
+          obj["Source Sheet"] = tabName;
+          combined.push(obj);
+        });
+      });
+
+      HEADERS = headerRef ? headerRef.concat(["Source Sheet"]) : [];
+      MASTER = combined;
+
+      // Populate sources
+      const sel = document.getElementById("sourceFilter");
+      [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s=>{
+        const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
+      });
+
+      renderAll();
+    }
+
+    function filteredRows(){
+      const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value) : null;
+      const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value) : null;
+      const src = document.getElementById("sourceFilter").value || "";
+      const onlyFlagged = document.getElementById("onlyFlagged").checked;
+
+      // Convert rating letters to indexes (A=1…)
+      const idx = c => letterToIndex(c) - 1;
+
+      // Build filtered & sorted (ascending by timestamp)
+      const rows = MASTER.filter(r => {
+        // source
+        if (src && r["Source Sheet"] !== src) return false;
+        // flagged
+        if (onlyFlagged) {
+          const anyLE4 = RATING_COLS.some(col => num(r[HEADERS[idx(col)]] ) <= 4);
+          if (!anyLE4) return false;
+        }
+        // date
+        const ts = toEpoch(r[TIMESTAMP_HEADER]);
+        if (df && (ts==null || new Date(ts) < startOfDay(df))) return false;
+        if (dt && (ts==null || new Date(ts) > endOfDay(dt))) return false;
+        return true;
+      }).sort((a,b)=>{
+        const ta = toEpoch(a[TIMESTAMP_HEADER]);
+        const tb = toEpoch(b[TIMESTAMP_HEADER]);
+        if (ta==null && tb==null) return 0;
+        if (ta==null) return 1;
+        if (tb==null) return -1;
+        return ta - tb; // ascending
+      });
+
+      return rows;
+    }
+
+    function renderAll(){
+      renderKPIs();
+      drawTrend();
+      drawDist();
+      renderTable();
+    }
+
+    function renderKPIs(){
+      const rows = filteredRows();
+      const dVals = numericCol(rows, RATING_COLS[0]);
+      const eVals = numericCol(rows, RATING_COLS[1]);
+      const fVals = numericCol(rows, RATING_COLS[2]);
+      const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+      setText("avgD", fmt(avg(dVals)));
+      setText("avgE", fmt(avg(eVals)));
+      setText("avgF", fmt(avg(fVals)));
+
+      const flagged = rows.filter(r => RATING_COLS.some(c => num(r[HEADERS[letterToIndex(c)-1]]) <= 4)).length;
+      setText("pctFlagged", rows.length ? (Math.round((flagged/rows.length)*1000)/10)+"%" : "—");
+      setText("cntFlagged", rows.length ? `${flagged} of ${rows.length}` : "—");
+    }
+
+    function drawTrend(){
+      const rows = filteredRows();
+      const byDay = new Map();
+      rows.forEach(r=>{
+        const ts = toEpoch(r[TIMESTAMP_HEADER]); if (ts==null) return;
+        const d = new Date(ts);
+        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+        if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
+        const a = byDay.get(key);
+        const dR = num(r[HEADERS[letterToIndex(RATING_COLS[0])-1]]);
+        const eR = num(r[HEADERS[letterToIndex(RATING_COLS[1])-1]]);
+        const fR = num(r[HEADERS[letterToIndex(RATING_COLS[2])-1]]);
+        if (!isNaN(dR)) { a.dSum+=dR; a.dCnt++; }
+        if (!isNaN(eR)) { a.eSum+=eR; a.eCnt++; }
+        if (!isNaN(fR)) { a.fSum+=fR; a.fCnt++; }
+      });
+      const arr = [...byDay.entries()].sort((a,b)=> new Date(a[0]) - new Date(b[0]))
+        .map(([k,v]) => [new Date(k), v.dCnt?v.dSum/v.dCnt:null, v.eCnt?v.eSum/v.eCnt:null, v.fCnt?v.fSum/v.fCnt:null]);
+
+      const dt = new google.visualization.DataTable();
+      dt.addColumn("date", "Date"); dt.addColumn("number","D"); dt.addColumn("number","E"); dt.addColumn("number","F");
+      dt.addRows(arr);
+      const opts = { legend:{position:"top"}, height:320, chartArea:{left:48, top:36, right:8, bottom:40}, hAxis:{format:"MMM d"}, vAxis:{viewWindow:{min:0}}, lineWidth:3, pointSize:4 };
+      new google.visualization.LineChart(document.getElementById("trendChart")).draw(dt, opts);
+    }
+
+    function drawDist(){
+      const rows = filteredRows();
+      const counts = new Map();
+      rows.forEach(r=>{
+        RATING_COLS.forEach(c=>{
+          const v = num(r[HEADERS[letterToIndex(c)-1]]);
+          if (!isNaN(v)) counts.set(Math.round(v), (counts.get(Math.round(v))||0)+1);
+        });
+      });
+      const arr = [["Rating","Count"], ...[...counts.entries()].sort((a,b)=>a[0]-b[0]).map(([k,v])=>[String(k), v])];
+      const dt = google.visualization.arrayToDataTable(arr);
+      const opts = { legend:{position:"none"}, height:320, chartArea:{left:48, top:16, right:8, bottom:40}, hAxis:{title:"Rating"}, vAxis:{title:"Count", minValue:0} };
+      new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
+    }
+
+    function renderTable(){
+      const rows = filteredRows();
+      const start = (page-1)*pageSize;
+      const slice = rows.slice(start, start+pageSize);
+
+      // headers
+      const thead = document.getElementById("tableHead");
+      thead.innerHTML = "";
+      const trH = document.createElement("tr");
+      HEADERS.concat(["Source Sheet"]).forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
+      thead.appendChild(trH);
+
+      // body
+      const tbody = document.getElementById("tableBody");
+      tbody.innerHTML = "";
+      slice.forEach(r=>{
+        const tr = document.createElement("tr");
+        HEADERS.forEach(h => { const td=document.createElement("td"); td.textContent = cellToText(r[h]); tr.appendChild(td); });
+        const tdS = document.createElement("td"); tdS.textContent = r["Source Sheet"] || ""; tr.appendChild(tdS);
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
+      document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
+    }
+
+    // ---- Data loading helpers ----
+    async function fetchCSV(tab){
+      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${tab.gid}`;
+      const res = await fetch(url, {mode:"cors"});
+      const text = await res.text();
+      const parsed = Papa.parse(text.trim());
+      const data = parsed.data;
+      if (!data.length) return {tabName: tab.name, headers: [], rows: []};
+
+      // first row headers, rest rows
+      const headers = data[0];
+      const rows = data.slice(1).filter(r => r.join("").trim() !== "");
+      // normalize width
+      const width = headers.length;
+      const norm = rows.map(r => r.slice(0,width));
+      // append actual header names to ensure D/E/F exist
+      return { tabName: tab.name, headers, rows: norm };
+    }
+
+    // ---- utils ----
+    function letterToIndex(letter){ // A=1
+      let col=0, s=letter.toUpperCase();
+      for (let i=0;i<s.length;i++) col = col*26 + (s.charCodeAt(i)-64);
+      return col;
+    }
+    function num(v){ if (v==null||v==="") return NaN; const n=Number(String(v).replace(/[^\d.\-]/g,"")); return isNaN(n)?NaN:n; }
+    function toEpoch(cell){
+      if (cell==null||cell==="") return null;
+      const n = Number(cell);
+      if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
+        // could be serial days; convert: base 1899-12-30
+        const base = Date.UTC(1899,11,30);
+        return base + Math.round(n*86400000);
+      }
+      const p = Date.parse(cell);
+      if (!isNaN(p)) return p;
+      const m = String(cell).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+      if (m){ const d=+m[1], mo=+m[2]-1, y=(+m[3]<100?2000+ +m[3]:+m[3]); const hh=+(m[4]||0), mm=+(m[5]||0), ss=+(m[6]||0); return Date.UTC(y,mo,d,hh,mm,ss); }
+      return null;
+    }
+    function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0); }
+    function endOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999); }
+    function fmt(n){ return (n==null||isNaN(n)) ? "—" : (Math.round(n*100)/100).toFixed(2); }
+    function setText(id, t){ document.getElementById(id).textContent = t; }
+    function cellToText(c){ return c==null ? "" : String(c); }
+  </script>
+</body>
+</html>
