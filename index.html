@@ -82,7 +82,7 @@
   <script>
     // ==== CONFIG ====
     const SHEET_ID = "1WmEth7sgYjN1h0CbhHwkmUTVGzyAH0P9OpG1_5T0IsQ";
-    // Add your subsheets here (name + gid). Open each tab and copy gid=... from the URL.
+    // Your subsheets (tab name + gid)
     const TABS = [
       { name: "FR Offline", gid: "1763911499" },
       { name: "FR Pro",     gid: "1825161315" },
@@ -107,7 +107,7 @@
 
     // Pagination
     let page = 1, pageSize = 200;
-    let MASTER = [];    // array of rows (objects)
+    let MASTER = [];    // array of row objects
     let HEADERS = [];   // header names in order
 
     // Charts
@@ -121,34 +121,37 @@
     });
 
     async function init(){
-      // Fetch all tabs as CSV
-      const datasets = await Promise.all(TABS.map(t => fetchCSV(t)));
-      // Combine
-      const combined = [];
-      let headerRef = null;
+      try {
+        // Fetch all tabs as CSV
+        const datasets = await Promise.all(TABS.map(t => fetchCSV(t)));
+        // Combine
+        const combined = [];
+        let headerRef = null;
 
-      datasets.forEach(({tabName, headers, rows}) => {
-        if (!headers.length) return;
-        if (!headerRef) headerRef = headers.slice();
-        // Map rows to objects, add Source Sheet
-        rows.forEach(r => {
-          const obj = {};
-          headerRef.forEach((h,i)=> obj[h] = r[i] ?? "");
-          obj["Source Sheet"] = tabName;
-          combined.push(obj);
+        datasets.forEach(({tabName, headers, rows}) => {
+          if (!headers.length) return;
+          if (!headerRef) headerRef = headers.slice();
+          rows.forEach(r => {
+            const obj = {};
+            headerRef.forEach((h,i)=> obj[h] = r[i] ?? "");
+            obj["Source Sheet"] = tabName;
+            combined.push(obj);
+          });
         });
-      });
 
-      HEADERS = headerRef ? headerRef.concat(["Source Sheet"]) : [];
-      MASTER = combined;
+        HEADERS = headerRef ? headerRef.concat(["Source Sheet"]) : [];
+        MASTER = combined;
 
-      // Populate sources
-      const sel = document.getElementById("sourceFilter");
-      [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s=>{
-        const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
-      });
+        // Populate sources
+        const sel = document.getElementById("sourceFilter");
+        [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s=>{
+          const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
+        });
 
-      renderAll();
+        renderAll();
+      } catch (e) {
+        console.error("Init failed:", e);
+      }
     }
 
     function filteredRows(){
@@ -157,19 +160,14 @@
       const src = document.getElementById("sourceFilter").value || "";
       const onlyFlagged = document.getElementById("onlyFlagged").checked;
 
-      // Convert rating letters to indexes (A=1…)
-      const idx = c => letterToIndex(c) - 1;
+      const idx = c => letterToIndex(c) - 1; // col letter -> 0-based index
 
-      // Build filtered & sorted (ascending by timestamp)
       const rows = MASTER.filter(r => {
-        // source
         if (src && r["Source Sheet"] !== src) return false;
-        // flagged
         if (onlyFlagged) {
-          const anyLE4 = RATING_COLS.some(col => num(r[HEADERS[idx(col)]] ) <= 4);
+          const anyLE4 = RATING_COLS.some(col => num(r[HEADERS[idx(col)]]) <= 4);
           if (!anyLE4) return false;
         }
-        // date
         const ts = toEpoch(r[TIMESTAMP_HEADER]);
         if (df && (ts==null || new Date(ts) < startOfDay(df))) return false;
         if (dt && (ts==null || new Date(ts) > endOfDay(dt))) return false;
@@ -276,22 +274,44 @@
       document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
     }
 
+    // ---------- Helpers that were missing / improved ----------
+
+    // Return numbers for a given col letter ("D"), using current HEADERS mapping
+    function numericCol(rows, colLetter) {
+      const colIdx = letterToIndex(colLetter) - 1;     // 0-based
+      const header = HEADERS[colIdx];
+      if (!header) return [];
+      const vals = [];
+      for (const r of rows) {
+        const v = num(r[header]);
+        if (!isNaN(v)) vals.push(v);
+      }
+      return vals;
+    }
+
+    // Sanitize header names (remove BOM + trim)
+    function cleanHeaders(arr) {
+      return arr.map(h => String(h).replace(/^\uFEFF/, "").trim());
+    }
+
     // ---- Data loading helpers ----
     async function fetchCSV(tab){
       const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${tab.gid}`;
       const res = await fetch(url, {mode:"cors"});
+      if (!res.ok) {
+        console.error(`Failed to fetch ${tab.name}:`, res.status, res.statusText);
+        return { tabName: tab.name, headers: [], rows: [] };
+      }
       const text = await res.text();
       const parsed = Papa.parse(text.trim());
-      const data = parsed.data;
+      const data = parsed.data || [];
       if (!data.length) return {tabName: tab.name, headers: [], rows: []};
 
-      // first row headers, rest rows
-      const headers = data[0];
+      const headers = cleanHeaders(data[0]);       // 👈 sanitize headers
       const rows = data.slice(1).filter(r => r.join("").trim() !== "");
-      // normalize width
       const width = headers.length;
       const norm = rows.map(r => r.slice(0,width));
-      // append actual header names to ensure D/E/F exist
+      // console.log("Fetched", tab.name, "rows:", norm.length);
       return { tabName: tab.name, headers, rows: norm };
     }
 
@@ -304,9 +324,9 @@
     function num(v){ if (v==null||v==="") return NaN; const n=Number(String(v).replace(/[^\d.\-]/g,"")); return isNaN(n)?NaN:n; }
     function toEpoch(cell){
       if (cell==null||cell==="") return null;
+      // numeric serial (days)
       const n = Number(cell);
       if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
-        // could be serial days; convert: base 1899-12-30
         const base = Date.UTC(1899,11,30);
         return base + Math.round(n*86400000);
       }
