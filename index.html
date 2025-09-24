@@ -26,6 +26,8 @@
         --header-bg: rgba(255, 255, 255, 0.6);
         --chart-grid: rgba(0,0,0,0.07);
         --chart-text: #555;
+        --skeleton-bg: rgba(0,0,0,0.06);
+        --shimmer-bg: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
     }
 
     body.dark-mode {
@@ -40,8 +42,11 @@
         --header-bg: rgba(29, 29, 31, 0.6);
         --chart-grid: rgba(255,255,255,0.1);
         --chart-text: #999;
+        --skeleton-bg: rgba(255,255,255,0.06);
+        --shimmer-bg: linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent);
     }
     *{box-sizing:border-box}
+    .hidden { display: none !important; }
     body{margin:0;font-family:'Inter', -apple-system, BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale; transition: background-color 0.3s ease, color 0.3s ease;}
     header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);background:var(--header-bg);border-bottom:1px solid var(--ring);transition: background-color 0.3s ease, border-color 0.3s ease;}
     .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}
@@ -50,12 +55,14 @@
     .title i { font-size: 24px; color: var(--text-muted); }
     h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.025em}
     .subtitle{color:var(--muted);font-size:14px;font-weight:500;}
-    .header-meta { display: flex; align-items: center; gap: 16px; }
+    .header-meta { display: flex; align-items: center; gap: 20px; }
     .live-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .live-indicator i { font-size: 14px; }
     .live-dot { width: 8px; height: 8px; background-color: #34c759; border-radius: 50%; animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1); }
     @keyframes pulse { 50% { opacity: 0.3; } }
     .header-date { font-size: 13px; color: var(--text-muted); font-weight: 500; }
-    @media (max-width: 768px) { .header-date, .subtitle { display: none; } h1 { font-size: 20px; } }
+    @media (max-width: 820px) { .header-date { display: none; } }
+    @media (max-width: 768px) { .subtitle { display: none; } h1 { font-size: 20px; } }
     .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-4{grid-template-columns:repeat(4,1fr)}}
     .card{background:var(--card-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px; transition: all 0.3s ease;}
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.control{display:grid;gap:6px;min-width:180px}
@@ -98,6 +105,46 @@
     }
     input[type="checkbox"]:checked::before { transform: translate(-50%, -50%) scale(1); }
     input[type="checkbox"]:focus { box-shadow: 0 0 0 4px rgba(0,113,227,.15); }
+
+    /* Skeleton Loader */
+    .skeleton {
+        background: var(--skeleton-bg);
+        border-radius: var(--radius);
+        position: relative;
+        overflow: hidden;
+    }
+    .skeleton::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: var(--shimmer-bg);
+        animation: shimmer 1.5s infinite;
+        transform: translateX(-100%);
+    }
+    @keyframes shimmer { 100% { transform: translateX(100%); } }
+
+    /* Toast Notification */
+    .toast {
+        position: fixed;
+        bottom: -100px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--card-bg);
+        color: var(--text);
+        padding: 12px 20px;
+        border-radius: 999px;
+        box-shadow: var(--shadow);
+        z-index: 100;
+        font-size: 14px;
+        font-weight: 500;
+        border: 1px solid var(--ring);
+        backdrop-filter: blur(20px);
+        transition: bottom 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    }
+    .toast.show {
+        bottom: 24px;
+    }
+
   </style>
 </head>
 <body>
@@ -128,104 +175,124 @@
 
   <main class="wrap" style="padding-top:20px;">
     <div id="errorContainer"></div>
-    <div class="card">
-      <div class="controls">
-        <div class="control">
-          <label>Time Range</label>
-          <select id="timeFilter">
-            <option value="all">All time</option>
-            <option value="this-week">This Week</option>
-            <option value="last-week">Last Week</option>
-            <option value="this-month">This Month</option>
-            <option value="last-month">Last Month</option>
-            <option value="custom">Custom Range</option>
-          </select>
+
+    <div id="skeleton-loader">
+        <div class="card skeleton" style="height: 101px;"></div>
+        <div class="grid grid-4" style="margin-top:16px;">
+            <div class="kpi-stack"><div class="card skeleton" style="height: 88px;"></div><div class="card skeleton" style="height: 112px;"></div></div>
+            <div class="kpi-stack"><div class="card skeleton" style="height: 88px;"></div><div class="card skeleton" style="height: 112px;"></div></div>
+            <div class="kpi-stack"><div class="card skeleton" style="height: 88px;"></div><div class="card skeleton" style="height: 112px;"></div></div>
+            <div class="kpi-stack"><div class="card skeleton" style="height: 88px;"></div><div class="card skeleton" style="height: 112px;"></div></div>
         </div>
-        <div class="control"><label>From</label><input type="date" id="dateFrom"></div>
-        <div class="control"><label>To</label><input type="date" id="dateTo"></div>
-        <div class="control" style="min-width:260px"><label>Source Sheet</label><select id="sourceFilter"><option value="">All sources</option></select></div>
-        <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Rating < 7</span></label></div>
-        <div class="control"><label>&nbsp;</label><button class="primary" id="applyBtn">Apply</button></div>
-      </div>
+        <div class="grid grid-2" style="margin-top:16px;">
+            <div class="card skeleton" style="height: 360px;"></div>
+            <div class="card skeleton" style="height: 360px;"></div>
+        </div>
+        <div class="card skeleton" style="margin-top:16px; height: 400px;"></div>
     </div>
 
-    <div class="grid grid-4" style="margin-top:16px;">
-      <div class="kpi-stack">
-        <div class="card kpi">
-          <div class="label">Average Lecture Satisfaction</div>
-          <div class="value" id="avgD">—</div>
-        </div>
-        <div class="card kpi-small-standalone">
-          <div class="label">Lecture Satisfaction % &lt; 7</div>
-          <div class="value" id="pctFlaggedD">—</div>
-          <div class="sub muted" id="cntFlaggedD">—</div>
-        </div>
-      </div>
-      <div class="kpi-stack">
-        <div class="card kpi">
-          <div class="label">Average Concept Understandability</div>
-          <div class="value" id="avgE">—</div>
-        </div>
-        <div class="card kpi-small-standalone">
-          <div class="label">Concept Understandability % &lt; 7</div>
-          <div class="value" id="pctFlaggedE">—</div>
-          <div class="sub muted" id="cntFlaggedE">—</div>
+    <div id="dashboard-content" class="hidden">
+      <div class="card">
+        <div class="controls">
+          <div class="control">
+            <label>Time Range</label>
+            <select id="timeFilter">
+              <option value="all">All time</option>
+              <option value="this-week">This Week</option>
+              <option value="last-week">Last Week</option>
+              <option value="this-month">This Month</option>
+              <option value="last-month">Last Month</option>
+              <option value="custom">Custom Range</option>
+            </select>
+          </div>
+          <div class="control"><label>From</label><input type="date" id="dateFrom"></div>
+          <div class="control"><label>To</label><input type="date" id="dateTo"></div>
+          <div class="control" style="min-width:260px"><label>Batch Name</label><select id="sourceFilter"><option value="">All Batches</option></select></div>
+          <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Rating < 7</span></label></div>
+          <div class="control"><label>&nbsp;</label><button class="primary" id="applyBtn">Apply</button></div>
         </div>
       </div>
-      <div class="kpi-stack">
-        <div class="card kpi">
-          <div class="label">Average Faculty Approachability</div>
-          <div class="value" id="avgF">—</div>
-        </div>
-        <div class="card kpi-small-standalone">
-          <div class="label">Faculty Approachability % &lt; 7</div>
-          <div class="value" id="pctFlaggedF">—</div>
-          <div class="sub muted" id="cntFlaggedF">—</div>
-        </div>
-      </div>
-       <div class="kpi-stack">
-        <div class="card kpi">
-          <div class="label">Overall Average</div>
-          <div class="value" id="avgOverall">—</div>
-        </div>
-        <div class="card kpi-small-standalone">
-          <div class="label">Overall % &lt; 7</div>
-          <div class="value" id="pctFlaggedOverall">—</div>
-          <div class="sub muted" id="cntFlaggedOverall">—</div>
-        </div>
-      </div>
-    </div>
 
-    <div class="grid grid-2" style="margin-top:16px;">
-      <div class="card"><div class="label muted" style="margin-bottom:6px;">Trend (daily avg)</div><div class="chart" id="trendChart"></div></div>
-      <div class="card"><div class="label muted" style="margin-bottom:6px;">Distribution</div><div class="chart" id="distChart"></div></div>
-    </div>
-
-    <div class="card" style="margin-top:16px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;">
-        <div class="label muted">Rows</div>
-        <div class="pager">
-          <span class="badge" id="rowCount">0</span>
-          <button id="prevBtn">Prev</button>
-          <span id="pageInfo" class="muted">–</span>
-          <button id="nextBtn">Next</button>
+      <div class="grid grid-4" style="margin-top:16px;">
+        <div class="kpi-stack">
+          <div class="card kpi">
+            <div class="label">Average Lecture Satisfaction</div>
+            <div class="value" id="avgD">—</div>
+          </div>
+          <div class="card kpi-small-standalone">
+            <div class="label">Lecture Satisfaction % &lt; 7</div>
+            <div class="value" id="pctFlaggedD">—</div>
+            <div class="sub muted" id="cntFlaggedD">—</div>
+          </div>
+        </div>
+        <div class="kpi-stack">
+          <div class="card kpi">
+            <div class="label">Average Concept Understandability</div>
+            <div class="value" id="avgE">—</div>
+          </div>
+          <div class="card kpi-small-standalone">
+            <div class="label">Concept Understandability % &lt; 7</div>
+            <div class="value" id="pctFlaggedE">—</div>
+            <div class="sub muted" id="cntFlaggedE">—</div>
+          </div>
+        </div>
+        <div class="kpi-stack">
+          <div class="card kpi">
+            <div class="label">Average Faculty Approachability</div>
+            <div class="value" id="avgF">—</div>
+          </div>
+          <div class="card kpi-small-standalone">
+            <div class="label">Faculty Approachability % &lt; 7</div>
+            <div class="value" id="pctFlaggedF">—</div>
+            <div class="sub muted" id="cntFlaggedF">—</div>
+          </div>
+        </div>
+        <div class="kpi-stack">
+          <div class="card kpi">
+            <div class="label">Overall Average</div>
+            <div class="value" id="avgOverall">—</div>
+          </div>
+          <div class="card kpi-small-standalone">
+            <div class="label">Overall % &lt; 7</div>
+            <div class="value" id="pctFlaggedOverall">—</div>
+            <div class="sub muted" id="cntFlaggedOverall">—</div>
+          </div>
         </div>
       </div>
-      <div class="sep"></div>
-      <div class="table-wrap">
-        <table id="dataTable">
-          <thead id="tableHead"></thead>
-          <tbody id="tableBody"></tbody>
-        </table>
-        <div id="noResults" style="display:none; text-align:center; padding: 40px; color: var(--muted);">No results found for the selected filters.</div>
+
+      <div class="grid grid-2" style="margin-top:16px;">
+        <div class="card"><div class="label muted" style="margin-bottom:6px;">Trend (daily avg)</div><div class="chart" id="trendChart"></div></div>
+        <div class="card"><div class="label muted" style="margin-bottom:6px;">Rating Wise Distribution</div><div class="chart" id="distChart"></div></div>
+      </div>
+
+      <div class="card" style="margin-top:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div class="label muted">Rows</div>
+          <div class="pager">
+            <span class="badge" id="rowCount">0</span>
+            <button id="prevBtn">Prev</button>
+            <span id="pageInfo" class="muted">–</span>
+            <button id="nextBtn">Next</button>
+          </div>
+        </div>
+        <div class="sep"></div>
+        <div class="table-wrap">
+          <table id="dataTable">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+          <div id="noResults" style="display:none; text-align:center; padding: 40px; color: var(--muted);">No results found for the selected filters.</div>
+        </div>
       </div>
     </div>
   </main>
+  
+  <div id="toast-notification" class="toast">Dashboard has been updated with the latest data.</div>
 
   <script>
     // ==== CONFIG ====
     const API_URL = "https://script.google.com/macros/s/AKfycbx_w-Sq22CxSatJLcMFQ7WAovZjQ05vPNMOk-orVWH3-s7SBYm8DRRhA_5Xrao6HdBbng/exec";
-
+    const CACHE_DURATION_MINUTES = 15;
     const TIMESTAMP_HEADER = "Timestamp";
     let page = 1, pageSize = 200;
     let MASTER = [];
@@ -304,44 +371,60 @@
 
     function handleFilterChange() {
         page = 1;
-        renderAll();
+        loader.classList.add('visible');
+        setTimeout(() => {
+            renderAll();
+            loader.classList.remove('visible');
+        }, 50);
     }
 
     function handleTimeFilterChange() {
         const selection = document.getElementById("timeFilter").value;
         const dateFromInput = document.getElementById("dateFrom");
         const dateToInput = document.getElementById("dateTo");
+        const dateFromContainer = dateFromInput.parentElement;
+        const dateToContainer = dateToInput.parentElement;
+        
         const now = new Date();
         let startDate, endDate;
         const formatDate = (date) => date ? date.toISOString().split('T')[0] : "";
 
-        switch (selection) {
-            case "this-week": {
-                const day = now.getDay() || 7;
-                startDate = new Date(now);
-                startDate.setDate(now.getDate() - day + 1);
-                endDate = new Date();
-                break;
+        if (selection === 'all') {
+            dateFromContainer.style.display = 'none';
+            dateToContainer.style.display = 'none';
+            startDate = null;
+            endDate = null;
+        } else {
+            dateFromContainer.style.display = '';
+            dateToContainer.style.display = '';
+
+            switch (selection) {
+                case "this-week": {
+                    const day = now.getDay() || 7;
+                    startDate = new Date(now);
+                    startDate.setDate(now.getDate() - day + 1);
+                    endDate = new Date();
+                    break;
+                }
+                case "last-week": {
+                    const day = now.getDay() || 7;
+                    endDate = new Date(now);
+                    endDate.setDate(now.getDate() - day);
+                    startDate = new Date(endDate);
+                    startDate.setDate(endDate.getDate() - 6);
+                    break;
+                }
+                case "this-month": {
+                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                    endDate = new Date();
+                    break;
+                }
+                case "last-month": {
+                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                    endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                    break;
+                }
             }
-            case "last-week": {
-                const day = now.getDay() || 7;
-                endDate = new Date(now);
-                endDate.setDate(now.getDate() - day);
-                startDate = new Date(endDate);
-                startDate.setDate(endDate.getDate() - 6);
-                break;
-            }
-            case "this-month": {
-                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                endDate = new Date();
-                break;
-            }
-            case "last-month": {
-                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-                break;
-            }
-            case "all": default: { startDate = null; endDate = null; break; }
         }
 
         if (selection !== 'custom') {
@@ -356,70 +439,109 @@
     }
 
     async function init() {
-        loader.classList.add("visible");
         const errorContainer = document.getElementById("errorContainer");
+        const skeletonLoader = document.getElementById("skeleton-loader");
+        const dashboardContent = document.getElementById("dashboard-content");
         errorContainer.innerHTML = ''; 
 
-        if (!API_URL || API_URL === "YOUR_APPS_SCRIPT_URL_GOES_HERE") {
-            errorContainer.innerHTML = `<div class="error-banner"><strong>Configuration Error:</strong> Please set the API_URL.</div>`;
-            loader.classList.remove("visible");
-            return;
-        }
+        const cachedData = localStorage.getItem('dashboardData');
+        const cacheTimestamp = localStorage.getItem('dashboardCacheTimestamp');
+        const now = Date.now();
+        const isCacheStale = !cacheTimestamp || (now - parseInt(cacheTimestamp)) > CACHE_DURATION_MINUTES * 60 * 1000;
 
-        try {
-            const response = await fetch(API_URL);
-            if (!response.ok) throw new Error(`API returned status: ${response.status}`);
-            const data = await response.json();
-            if (data.status === 'error') throw new Error(`Apps Script failed: ${data.message}`);
+        const loadFromCache = () => {
+            const parsedCache = JSON.parse(cachedData);
+            HEADERS = parsedCache.headers;
+            MASTER = parsedCache.master;
             
-            const combined = [];
-            let headerRef = null;
-            const headerValidationErrors = [];
-            const sheetNames = Object.keys(data);
+            populateAndRender();
+            skeletonLoader.classList.add('hidden');
+            dashboardContent.classList.remove('hidden');
+        };
 
-            sheetNames.forEach(sheetName => {
-                const sheetRows = data[sheetName];
-                if (!sheetRows || sheetRows.length < 2) return;
-                const headers = cleanHeaders(sheetRows[0]);
-                const rows = sheetRows.slice(1);
-                if (!headerRef) {
-                    headerRef = headers;
-                } else if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
-                    headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
-                    return;
+        const fetchFreshData = async (isUpdate = false) => {
+            try {
+                if (!API_URL || API_URL === "YOUR_APPS_SCRIPT_URL_GOES_HERE") {
+                    throw new Error("API_URL is not configured.");
                 }
-                rows.forEach(r => {
-                    const obj = {};
-                    headerRef.forEach((h, i) => obj[h] = r[i] ?? "");
-                    obj["Source Sheet"] = sheetName;
-                    combined.push(obj);
+                const response = await fetch(API_URL);
+                if (!response.ok) throw new Error(`API returned status: ${response.status}`);
+                const data = await response.json();
+                if (data.status === 'error') throw new Error(`Apps Script failed: ${data.message}`);
+                
+                const combined = [];
+                let headerRef = null;
+                const headerValidationErrors = [];
+                const sheetNames = Object.keys(data);
+
+                sheetNames.forEach(sheetName => {
+                    const sheetRows = data[sheetName];
+                    if (!sheetRows || sheetRows.length < 2) return;
+                    const headers = cleanHeaders(sheetRows[0]);
+                    const rows = sheetRows.slice(1);
+                    if (!headerRef) headerRef = headers;
+                    else if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
+                        headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
+                        return;
+                    }
+                    rows.forEach(r => {
+                        const obj = {};
+                        headerRef.forEach((h, i) => obj[h] = r[i] ?? "");
+                        obj["Source Sheet"] = sheetName;
+                        combined.push(obj);
+                    });
                 });
-            });
 
-            combined.forEach(r => { r._epoch = toEpoch(r[TIMESTAMP_HEADER]); });
+                combined.forEach(r => { r._epoch = toEpoch(r[TIMESTAMP_HEADER]); });
 
-            if (headerValidationErrors.length > 0) {
-                errorContainer.innerHTML = `<div class="error-banner"><strong>Data Warning:</strong><ul>${headerValidationErrors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+                if (headerValidationErrors.length > 0) {
+                     errorContainer.innerHTML = `<div class="error-banner"><strong>Data Warning:</strong><ul>${headerValidationErrors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
+                }
+                if (!headerRef) throw new Error("No valid data loaded. Check sheet formats.");
+
+                HEADERS = headerRef.concat("Source Sheet");
+                MASTER = combined;
+                
+                const cachePayload = { headers: HEADERS, master: MASTER };
+                localStorage.setItem('dashboardData', JSON.stringify(cachePayload));
+                localStorage.setItem('dashboardCacheTimestamp', Date.now());
+
+                return true; // Success
+            } catch (e) {
+                console.error("Data fetch failed:", e);
+                if (!isUpdate) {
+                    errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
+                    skeletonLoader.classList.add('hidden');
+                }
+                return false; // Failure
             }
-            if (!headerRef) throw new Error("No valid data loaded. Check sheet formats.");
+        };
 
-            HEADERS = headerRef.concat("Source Sheet");
-            MASTER = combined;
-
-            const sel = document.getElementById("sourceFilter");
-            sel.options.length = 1;
-            [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s => {
-                const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
-            });
-
-            handleTimeFilterChange();
-            renderAll();
-            loader.classList.remove("visible");
-        } catch (e) {
-            console.error("Initialization failed:", e);
-            errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
-            loader.classList.remove("visible");
+        if (cachedData && !isCacheStale) {
+            loadFromCache();
+            const success = await fetchFreshData(true);
+            if (success) {
+                renderAll();
+                showToast();
+            }
+        } else {
+            const success = await fetchFreshData(false);
+            if (success) {
+                populateAndRender();
+                skeletonLoader.classList.add('hidden');
+                dashboardContent.classList.remove('hidden');
+            }
         }
+    }
+    
+    function populateAndRender() {
+        const sel = document.getElementById("sourceFilter");
+        sel.options.length = 1;
+        [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s => {
+            const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
+        });
+        handleTimeFilterChange();
+        renderAll();
     }
     
     function filteredRows(){
@@ -466,11 +588,16 @@
         const flaggedE = eVals.filter(v => v < 7).length;
         const flaggedF = fVals.filter(v => v < 7).length;
 
-        setText("pctFlaggedD", dVals.length ? (Math.round((flaggedD/dVals.length)*1000)/10)+"%" : "—");
+        const pctD = dVals.length ? (flaggedD / dVals.length) * 100 : null;
+        animatePercentage("pctFlaggedD", pctD);
         setText("cntFlaggedD", dVals.length ? `${flaggedD} of ${dVals.length}` : "—");
-        setText("pctFlaggedE", eVals.length ? (Math.round((flaggedE/eVals.length)*1000)/10)+"%" : "—");
+
+        const pctE = eVals.length ? (flaggedE / eVals.length) * 100 : null;
+        animatePercentage("pctFlaggedE", pctE);
         setText("cntFlaggedE", eVals.length ? `${flaggedE} of ${eVals.length}` : "—");
-        setText("pctFlaggedF", fVals.length ? (Math.round((flaggedF/fVals.length)*1000)/10)+"%" : "—");
+
+        const pctF = fVals.length ? (flaggedF / fVals.length) * 100 : null;
+        animatePercentage("pctFlaggedF", pctF);
         setText("cntFlaggedF", fVals.length ? `${flaggedF} of ${fVals.length}` : "—");
         
         const allVals = [...dVals, ...eVals, ...fVals];
@@ -478,7 +605,8 @@
         animateValue("avgOverall", avgOverallVal);
 
         const flaggedOverall = allVals.filter(v => v < 7).length;
-        setText("pctFlaggedOverall", allVals.length ? (Math.round((flaggedOverall/allVals.length)*1000)/10)+"%" : "—");
+        const pctOverall = allVals.length ? (flaggedOverall / allVals.length) * 100 : null;
+        animatePercentage("pctFlaggedOverall", pctOverall);
         setText("cntFlaggedOverall", allVals.length ? `${flaggedOverall} of ${allVals.length}` : "—");
     }
     
@@ -501,7 +629,9 @@
             const ts = r._epoch;
             if (ts==null) return;
             const d = new Date(ts);
-            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+            // Use UTC methods to create a consistent daily key, regardless of browser timezone
+            const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
+            
             if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
             const a = byDay.get(key);
             const dR = num(r[HEADERS[3]]); const eR = num(r[HEADERS[4]]); const fR = num(r[HEADERS[5]]);
@@ -509,11 +639,17 @@
             if (!isNaN(eR)) { a.eSum+=eR; a.eCnt++; }
             if (!isNaN(fR)) { a.fSum+=fR; a.fCnt++; }
         });
+        
+        const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
         const arr = [...byDay.entries()].sort((a,b)=> new Date(a[0]) - new Date(b[0]))
-            .map(([k,v]) => [new Date(k), v.dCnt?v.dSum/v.dCnt:null, v.eCnt?v.eSum/v.eCnt:null, v.fCnt?v.fSum/v.fCnt:null]);
+            .map(([k,v]) => {
+                const [y, m, d] = k.split('-').map(Number);
+                const formattedDate = `${monthNames[m - 1]} ${d}`;
+                return [formattedDate, v.dCnt?v.dSum/v.dCnt:null, v.eCnt?v.eSum/v.eCnt:null, v.fCnt?v.fSum/v.fCnt:null];
+            });
 
         const dt = new google.visualization.DataTable();
-        dt.addColumn("date", "Date");
+        dt.addColumn("string", "Date");
         dt.addColumn("number","Lecture Satisfaction");
         dt.addColumn("number","Concept Understandability");
         dt.addColumn("number","Faculty Approachability");
@@ -561,8 +697,7 @@
             noResults.style.display = 'block';
             thead.style.display = 'none';
         } else {
-            noResults.style.display = 'none';
-            thead.style.display = '';
+            noResults.style.display = '';
             const trH = document.createElement("tr");
             HEADERS.forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
             thead.appendChild(trH);
@@ -601,10 +736,43 @@
         return null;
     }
     function fmt(n){ return (n==null||isNaN(n)) ? "—" : (Math.round(n*100)/100).toFixed(2); }
-    function setText(id, t){ document.getElementById(id).textContent = t; }
+    function setText(id, t){ const el = document.getElementById(id); if (el) el.textContent = t; }
     function cellToText(c){ return c==null ? "" : String(c); }
+
+    function showToast() {
+        const toast = document.getElementById("toast-notification");
+        if (toast) {
+            toast.classList.add("show");
+            setTimeout(() => {
+                toast.classList.remove("show");
+            }, 4000);
+        }
+    }
+
+    function animatePercentage(id, end) {
+        const el = document.getElementById(id);
+        if (!el) { console.warn(`Element with ID "${id}" not found for animation.`); return; }
+        if (end === null || isNaN(end)) { el.textContent = "—"; return; }
+        let start = parseFloat(el.textContent) || 0;
+        if (start === end && el.textContent.includes('%')) { el.textContent = end.toFixed(1) + "%"; return; }
+        const duration = 800, startTime = performance.now();
+        function step(currentTime) {
+            const elapsed = currentTime - startTime;
+            if (elapsed > duration) {
+                el.textContent = end.toFixed(1) + "%";
+            } else {
+                const progress = elapsed / duration;
+                const current = start + (end - start) * progress;
+                el.textContent = current.toFixed(1) + "%";
+                requestAnimationFrame(step);
+            }
+        }
+        requestAnimationFrame(step);
+    }
+
     function animateValue(id, end) {
         const el = document.getElementById(id);
+        if (!el) { console.warn(`Element with ID "${id}" not found for animation.`); return; }
         if (end === null || isNaN(end)) { el.textContent = "—"; return; }
         let start = parseFloat(el.textContent) || 0;
         if (start === end) { el.textContent = fmt(end); return; }
