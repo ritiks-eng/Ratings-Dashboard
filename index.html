@@ -6,8 +6,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Google Charts -->
   <script src="https://www.gstatic.com/charts/loader.js"></script>
-  <!-- CSV parser (Papa Parse) -->
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
   <style>
     :root{--bg:#f5f5f7;--card:#fff;--text:#111;--muted:#6e6e73;--ring:rgba(0,0,0,.08);--accent:#0071e3;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:18px}
     *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial;background:linear-gradient(180deg,#fafafa 0%,var(--bg) 100%);color:var(--text)}
@@ -24,6 +22,44 @@
     th,td{padding:10px 12px;border-bottom:1px solid #efefef;font-size:13px} th{text-align:left;color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
     .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#eef5ff;color:#0b5bd3;border:1px solid #d8e7ff}
     .muted{color:#6e6e73}.sep{height:1px;background:rgba(0,0,0,.06);margin:12px 0}.pager{display:flex;gap:8px;align-items:center}
+    .error-banner{background:#fff2f2;border:1px solid #ffcccc;color:#d8000c;padding:12px;border-radius:12px;margin-bottom:16px;font-size:14px;}
+    .error-banner ul{margin:8px 0 0 20px;padding:0;}
+
+    /* Custom Checkbox for a cleaner, more consistent UI */
+    input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        position: relative;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 1.5px solid var(--ring);
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        flex-shrink: 0;
+    }
+    input[type="checkbox"]:checked {
+        background-color: var(--accent);
+        border-color: var(--accent);
+    }
+    input[type="checkbox"]::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 9999px;
+        background-color: white;
+        transition: transform 0.2s ease-in-out;
+    }
+    input[type="checkbox"]:checked::before {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    input[type="checkbox"]:focus {
+        box-shadow: 0 0 0 4px rgba(0,113,227,.15);
+    }
   </style>
 </head>
 <body>
@@ -31,27 +67,39 @@
     <div class="wrap">
       <div class="title">
         <h1>Ratings Dashboard</h1>
-        <span class="subtitle">Apple-inspired • Live from Google Sheets</span>
+        <span class="subtitle">Live from Google Sheets</span>
       </div>
     </div>
   </header>
 
   <main class="wrap" style="padding-top:20px;">
+    <div id="errorContainer"></div>
     <div class="card">
       <div class="controls">
+        <div class="control">
+          <label>Time Range</label>
+          <select id="timeFilter">
+            <option value="all">All time</option>
+            <option value="this-week">This Week</option>
+            <option value="last-week">Last Week</option>
+            <option value="this-month">This Month</option>
+            <option value="last-month">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
+        </div>
         <div class="control"><label>From</label><input type="date" id="dateFrom"></div>
         <div class="control"><label>To</label><input type="date" id="dateTo"></div>
         <div class="control" style="min-width:260px"><label>Source Sheet</label><select id="sourceFilter"><option value="">All sources</option></select></div>
-        <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Only Flagged ≤ 4 (D/E/F)</span></label></div>
+        <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Rating < 7</span></label></div>
         <div class="control"><label>&nbsp;</label><button class="primary" id="applyBtn">Apply</button></div>
       </div>
     </div>
 
     <div class="grid grid-4" style="margin-top:16px;">
-      <div class="card kpi"><div class="label">Avg D</div><div class="value" id="avgD">—</div></div>
-      <div class="card kpi"><div class="label">Avg E</div><div class="value" id="avgE">—</div></div>
-      <div class="card kpi"><div class="label">Avg F</div><div class="value" id="avgF">—</div></div>
-      <div class="card kpi"><div class="label">% Flagged</div><div class="value" id="pctFlagged">—</div><div class="sub muted" id="cntFlagged">—</div></div>
+      <div class="card kpi"><div class="label">Average Lecture Satisfaction</div><div class="value" id="avgD">—</div></div>
+      <div class="card kpi"><div class="label">Average Concept Understandability</div><div class="value" id="avgE">—</div></div>
+      <div class="card kpi"><div class="label">Average Faculty Approachability</div><div class="value" id="avgF">—</div></div>
+      <div class="card kpi"><div class="label">% less than 7</div><div class="value" id="pctFlagged">—</div><div class="sub muted" id="cntFlagged">—</div></div>
     </div>
 
     <div class="grid grid-2" style="margin-top:16px;">
@@ -75,272 +123,367 @@
           <thead id="tableHead"></thead>
           <tbody id="tableBody"></tbody>
         </table>
+        <div id="noResults" style="display:none; text-align:center; padding: 40px; color: var(--muted);">No results found for the selected filters.</div>
       </div>
     </div>
   </main>
 
   <script>
     // ==== CONFIG ====
-    const SHEET_ID = "1WmEth7sgYjN1h0CbhHwkmUTVGzyAH0P9OpG1_5T0IsQ";
-    // Your subsheets (tab name + gid)
-    const TABS = [
-      { name: "FR Offline", gid: "1763911499" },
-      { name: "FR Pro",     gid: "1825161315" },
-      { name: "FR B1 Pre",  gid: "997356923" },
-      { name: "FR B2 Pre",  gid: "472237408" },
-      { name: "FM Pre",     gid: "1855440882" },
-      { name: "PM Pre",     gid: "11803048" },
-      { name: "TX Pre",     gid: "1285290625" },
-      { name: "AA Pre",     gid: "327048264" },
-      { name: "SBL Pre",    gid: "611841544" },
-      { name: "SBR Pre",    gid: "2095232737" },
-      { name: "AAA Pre",    gid: "2104472063" },
-      { name: "APM Pre",    gid: "24554878" },
-      { name: "AFM Pre",    gid: "431695886" },
-      { name: "AA Pro",     gid: "657536098" },
-      { name: "FM Pro",     gid: "506417753" },
-      { name: "FA Pro",     gid: "420902956" }
-    ];
-    // Column assumptions in every tab:
-    const TIMESTAMP_HEADER = "Timestamp";   // change if your timestamp header text differs
-    const RATING_COLS = ["D","E","F"];      // rating columns by letter (must exist in each tab)
+    const API_URL = "https://script.google.com/macros/s/AKfycbx_w-Sq22CxSatJLcMFQ7WAovZjQ05vPNMOk-orVWH3-s7SBYm8DRRhA_5Xrao6HdBbng/exec";
 
-    // Pagination
+    const TIMESTAMP_HEADER = "Timestamp";
+    // RATING_COLS is no longer used, we will use fixed column positions D, E, F (indices 3, 4, 5)
+
     let page = 1, pageSize = 200;
-    let MASTER = [];    // array of row objects
-    let HEADERS = [];   // header names in order
+    let MASTER = [];
+    let HEADERS = [];
 
-    // Charts
-    google.charts.load("current", {"packages":["corechart"]});
+    google.charts.load("current", { "packages": ["corechart"] });
 
     document.addEventListener("DOMContentLoaded", () => {
-      google.charts.setOnLoadCallback(init);
-      document.getElementById("applyBtn").addEventListener("click", () => { page = 1; renderAll(); });
-      document.getElementById("prevBtn").addEventListener("click", () => { if (page>1){ page--; renderTable(); } });
-      document.getElementById("nextBtn").addEventListener("click", () => { if ((page*pageSize) < filteredRows().length){ page++; renderTable(); } });
+        google.charts.setOnLoadCallback(init);
+        
+        document.getElementById("applyBtn").addEventListener("click", handleFilterChange);
+        document.getElementById("timeFilter").addEventListener("change", handleTimeFilterChange);
+        document.getElementById("dateFrom").addEventListener("change", () => {
+            const timeFilter = document.getElementById("timeFilter");
+            if (timeFilter.value !== 'custom') {
+                timeFilter.value = 'custom';
+                handleTimeFilterChange(); // This will re-enable the date inputs
+            }
+        });
+        document.getElementById("dateTo").addEventListener("change", () => {
+            const timeFilter = document.getElementById("timeFilter");
+            if (timeFilter.value !== 'custom') {
+                timeFilter.value = 'custom';
+                handleTimeFilterChange(); // This will re-enable the date inputs
+            }
+        });
+
+        document.getElementById("prevBtn").addEventListener("click", () => { if (page > 1) { page--; renderTable(); } });
+        document.getElementById("nextBtn").addEventListener("click", () => { if ((page * pageSize) < filteredRows().length) { page++; renderTable(); } });
     });
 
-    async function init(){
-      try {
-        // Fetch all tabs as CSV
-        const datasets = await Promise.all(TABS.map(t => fetchCSV(t)));
-        // Combine
-        const combined = [];
-        let headerRef = null;
-
-        datasets.forEach(({tabName, headers, rows}) => {
-          if (!headers.length) return;
-          if (!headerRef) headerRef = headers.slice();
-          rows.forEach(r => {
-            const obj = {};
-            headerRef.forEach((h,i)=> obj[h] = r[i] ?? "");
-            obj["Source Sheet"] = tabName;
-            combined.push(obj);
-          });
-        });
-
-        HEADERS = headerRef ? headerRef.concat(["Source Sheet"]) : [];
-        MASTER = combined;
-
-        // Populate sources
-        const sel = document.getElementById("sourceFilter");
-        [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s=>{
-          const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
-        });
-
+    function handleFilterChange() {
+        page = 1;
         renderAll();
-      } catch (e) {
-        console.error("Init failed:", e);
-      }
     }
 
-    function filteredRows(){
-      const df = document.getElementById("dateFrom").value ? new Date(document.getElementById("dateFrom").value) : null;
-      const dt = document.getElementById("dateTo").value ? new Date(document.getElementById("dateTo").value) : null;
-      const src = document.getElementById("sourceFilter").value || "";
-      const onlyFlagged = document.getElementById("onlyFlagged").checked;
+    function handleTimeFilterChange() {
+        const selection = document.getElementById("timeFilter").value;
+        const dateFromInput = document.getElementById("dateFrom");
+        const dateToInput = document.getElementById("dateTo");
+        
+        const now = new Date();
+        let startDate, endDate;
 
-      const idx = c => letterToIndex(c) - 1; // col letter -> 0-based index
+        const formatDate = (date) => date ? date.toISOString().split('T')[0] : "";
 
-      const rows = MASTER.filter(r => {
-        if (src && r["Source Sheet"] !== src) return false;
-        if (onlyFlagged) {
-          const anyLE4 = RATING_COLS.some(col => num(r[HEADERS[idx(col)]]) <= 4);
-          if (!anyLE4) return false;
+        switch (selection) {
+            case "this-week": {
+                const day = now.getDay() || 7; // Sunday is 0, make it 7
+                startDate = new Date(now);
+                startDate.setDate(now.getDate() - day + 1);
+                endDate = new Date();
+                break;
+            }
+            case "last-week": {
+                const day = now.getDay() || 7;
+                endDate = new Date(now);
+                endDate.setDate(now.getDate() - day); // Last Sunday
+                startDate = new Date(endDate);
+                startDate.setDate(endDate.getDate() - 6); // Monday of last week
+                break;
+            }
+            case "this-month": {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date();
+                break;
+            }
+            case "last-month": {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                break;
+            }
+            case "all":
+            default: {
+                startDate = null;
+                endDate = null;
+                break;
+            }
         }
-        const ts = toEpoch(r[TIMESTAMP_HEADER]);
-        if (df && (ts==null || new Date(ts) < startOfDay(df))) return false;
-        if (dt && (ts==null || new Date(ts) > endOfDay(dt))) return false;
-        return true;
-      }).sort((a,b)=>{
-        const ta = toEpoch(a[TIMESTAMP_HEADER]);
-        const tb = toEpoch(b[TIMESTAMP_HEADER]);
-        if (ta==null && tb==null) return 0;
-        if (ta==null) return 1;
-        if (tb==null) return -1;
-        return ta - tb; // ascending
-      });
 
-      return rows;
+        if (selection !== 'custom') {
+            dateFromInput.value = formatDate(startDate);
+            dateToInput.value = formatDate(endDate);
+            dateFromInput.disabled = true;
+            dateToInput.disabled = true;
+        } else {
+            dateFromInput.disabled = false;
+            dateToInput.disabled = false;
+        }
+    }
+
+    async function init() {
+        const errorContainer = document.getElementById("errorContainer");
+        errorContainer.innerHTML = ''; // Clear previous errors
+
+        if (!API_URL || API_URL === "YOUR_APPS_SCRIPT_URL_GOES_HERE") {
+             errorContainer.innerHTML = `<div class="error-banner"><strong>Configuration Error:</strong> Please paste your Google Apps Script URL into the API_URL constant in the script.</div>`;
+             return;
+        }
+
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) {
+                throw new Error(`The Apps Script returned an error (Status: ${response.status})`);
+            }
+            const data = await response.json();
+
+            if (data.status === 'error') {
+                throw new Error(`Apps Script execution failed: ${data.message}`);
+            }
+            
+            const combined = [];
+            let headerRef = null;
+            const headerValidationErrors = [];
+            const sheetNames = Object.keys(data);
+
+            sheetNames.forEach(sheetName => {
+                const sheetRows = data[sheetName];
+                if (!sheetRows || sheetRows.length < 2) return; 
+
+                const headers = cleanHeaders(sheetRows[0]);
+                const rows = sheetRows.slice(1);
+
+                if (!headerRef) {
+                    headerRef = headers;
+                } else {
+                    if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
+                         headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
+                         return;
+                    }
+                }
+                
+                rows.forEach(r => {
+                    const obj = {};
+                    headerRef.forEach((h, i) => obj[h] = r[i] ?? "");
+                    obj["Source Sheet"] = sheetName;
+                    combined.push(obj);
+                });
+            });
+
+            // Pre-process timestamps for performance and reliability
+            combined.forEach(r => {
+                r._epoch = toEpoch(r[TIMESTAMP_HEADER]);
+            });
+
+            if (headerValidationErrors.length > 0) {
+                let errorHTML = '<div class="error-banner"><strong>Data Loading Warning:</strong><ul>';
+                headerValidationErrors.forEach(e => errorHTML += `<li>${e}</li>`);
+                errorHTML += '</ul></div>';
+                errorContainer.innerHTML = errorHTML;
+            }
+
+            if (!headerRef) {
+                throw new Error("Could not load any data. Please check your Apps Script and ensure the underlying sheets have data.");
+            }
+
+            HEADERS = headerRef.concat("Source Sheet");
+            MASTER = combined;
+
+            const sel = document.getElementById("sourceFilter");
+            sel.options.length = 1;
+            [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s => {
+                const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
+            });
+
+            handleTimeFilterChange(); // Set initial state
+            renderAll();
+
+        } catch (e) {
+            console.error("Dashboard initialization failed:", e);
+            errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
+        }
+    }
+    
+    function filteredRows(){
+        const fromVal = document.getElementById("dateFrom").value;
+        const toVal = document.getElementById("dateTo").value;
+        
+        // Treat YYYY-MM-DD as UTC to avoid timezone issues for robust filtering
+        const dfEpoch = fromVal ? new Date(fromVal + 'T00:00:00.000Z').getTime() : null;
+        const dtEpoch = toVal ? new Date(toVal + 'T23:59:59.999Z').getTime() : null;
+        
+        const src = document.getElementById("sourceFilter").value || "";
+        const onlyFlagged = document.getElementById("onlyFlagged").checked;
+
+        const rows = MASTER.filter(r => {
+            if (src && r["Source Sheet"] !== src) return false;
+            if (onlyFlagged) {
+                // Check columns D, E, F by their fixed position (index 3, 4, 5)
+                const ratingHeaders = [HEADERS[3], HEADERS[4], HEADERS[5]].filter(Boolean);
+                const anyLT7 = ratingHeaders.some(header => num(r[header]) < 7);
+                if (!anyLT7) return false;
+            }
+            const ts = r._epoch; // Use pre-parsed timestamp
+            if (dfEpoch && (ts == null || ts < dfEpoch)) return false;
+            if (dtEpoch && (ts == null || ts > dtEpoch)) return false;
+            return true;
+        }).sort((a,b)=>{
+            const ta = a._epoch; // Use pre-parsed timestamp
+            const tb = b._epoch; // Use pre-parsed timestamp
+            if (ta==null && tb==null) return 0;
+            if (ta==null) return 1;
+            if (tb==null) return -1;
+            return tb - ta; 
+        });
+
+        return rows;
     }
 
     function renderAll(){
-      renderKPIs();
-      drawTrend();
-      drawDist();
-      renderTable();
+        renderKPIs();
+        drawTrend();
+        drawDist();
+        renderTable();
     }
 
     function renderKPIs(){
-      const rows = filteredRows();
-      const dVals = numericCol(rows, RATING_COLS[0]);
-      const eVals = numericCol(rows, RATING_COLS[1]);
-      const fVals = numericCol(rows, RATING_COLS[2]);
-      const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+        const rows = filteredRows();
+        // Access columns D, E, F by their fixed position (index 3, 4, 5)
+        const headerD = HEADERS[3];
+        const headerE = HEADERS[4];
+        const headerF = HEADERS[5];
 
-      setText("avgD", fmt(avg(dVals)));
-      setText("avgE", fmt(avg(eVals)));
-      setText("avgF", fmt(avg(fVals)));
+        const dVals = numericCol(rows, headerD);
+        const eVals = numericCol(rows, headerE);
+        const fVals = numericCol(rows, headerF);
+        const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
 
-      const flagged = rows.filter(r => RATING_COLS.some(c => num(r[HEADERS[letterToIndex(c)-1]]) <= 4)).length;
-      setText("pctFlagged", rows.length ? (Math.round((flagged/rows.length)*1000)/10)+"%" : "—");
-      setText("cntFlagged", rows.length ? `${flagged} of ${rows.length}` : "—");
+        setText("avgD", fmt(avg(dVals)));
+        setText("avgE", fmt(avg(eVals)));
+        setText("avgF", fmt(avg(fVals)));
+
+        const ratingHeaders = [headerD, headerE, headerF].filter(Boolean);
+        const flagged = rows.filter(r => ratingHeaders.some(h => num(r[h]) < 7)).length;
+        setText("pctFlagged", rows.length ? (Math.round((flagged/rows.length)*1000)/10)+"%" : "—");
+        setText("cntFlagged", rows.length ? `${flagged} of ${rows.length}` : "—");
     }
 
     function drawTrend(){
-      const rows = filteredRows();
-      const byDay = new Map();
-      rows.forEach(r=>{
-        const ts = toEpoch(r[TIMESTAMP_HEADER]); if (ts==null) return;
-        const d = new Date(ts);
-        const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
-        if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
-        const a = byDay.get(key);
-        const dR = num(r[HEADERS[letterToIndex(RATING_COLS[0])-1]]);
-        const eR = num(r[HEADERS[letterToIndex(RATING_COLS[1])-1]]);
-        const fR = num(r[HEADERS[letterToIndex(RATING_COLS[2])-1]]);
-        if (!isNaN(dR)) { a.dSum+=dR; a.dCnt++; }
-        if (!isNaN(eR)) { a.eSum+=eR; a.eCnt++; }
-        if (!isNaN(fR)) { a.fSum+=fR; a.fCnt++; }
-      });
-      const arr = [...byDay.entries()].sort((a,b)=> new Date(a[0]) - new Date(b[0]))
-        .map(([k,v]) => [new Date(k), v.dCnt?v.dSum/v.dCnt:null, v.eCnt?v.eSum/v.eCnt:null, v.fCnt?v.fSum/v.fCnt:null]);
+        const rows = filteredRows();
+        const byDay = new Map();
+        rows.forEach(r=>{
+            const ts = r._epoch; // Use pre-parsed timestamp
+            if (ts==null) return;
+            const d = new Date(ts);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+            if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
+            const a = byDay.get(key);
+            const dR = num(r[HEADERS[3]]);
+            const eR = num(r[HEADERS[4]]);
+            const fR = num(r[HEADERS[5]]);
+            if (!isNaN(dR)) { a.dSum+=dR; a.dCnt++; }
+            if (!isNaN(eR)) { a.eSum+=eR; a.eCnt++; }
+            if (!isNaN(fR)) { a.fSum+=fR; a.fCnt++; }
+        });
+        const arr = [...byDay.entries()].sort((a,b)=> new Date(a[0]) - new Date(b[0]))
+            .map(([k,v]) => [new Date(k), v.dCnt?v.dSum/v.dCnt:null, v.eCnt?v.eSum/v.eCnt:null, v.fCnt?v.fSum/v.fCnt:null]);
 
-      const dt = new google.visualization.DataTable();
-      dt.addColumn("date", "Date"); dt.addColumn("number","D"); dt.addColumn("number","E"); dt.addColumn("number","F");
-      dt.addRows(arr);
-      const opts = { legend:{position:"top"}, height:320, chartArea:{left:48, top:36, right:8, bottom:40}, hAxis:{format:"MMM d"}, vAxis:{viewWindow:{min:0}}, lineWidth:3, pointSize:4 };
-      new google.visualization.LineChart(document.getElementById("trendChart")).draw(dt, opts);
+        const dt = new google.visualization.DataTable();
+        dt.addColumn("date", "Date");
+        dt.addColumn("number","Average Lecture Satisfaction");
+        dt.addColumn("number","Average Concept Understandability");
+        dt.addColumn("number","Average Faculty Approachability");
+        dt.addRows(arr);
+        const opts = { legend:{position:"top"}, height:320, chartArea:{left:48, top:36, right:8, bottom:40}, hAxis:{format:"MMM d"}, vAxis:{viewWindow:{min:0}}, lineWidth:3, pointSize:4 };
+        new google.visualization.LineChart(document.getElementById("trendChart")).draw(dt, opts);
     }
 
     function drawDist(){
-      const rows = filteredRows();
-      const counts = new Map();
-      rows.forEach(r=>{
-        RATING_COLS.forEach(c=>{
-          const v = num(r[HEADERS[letterToIndex(c)-1]]);
-          if (!isNaN(v)) counts.set(Math.round(v), (counts.get(Math.round(v))||0)+1);
+        const rows = filteredRows();
+        const counts = new Map();
+        rows.forEach(r=>{
+            // Use columns D, E, F by their fixed position (index 3, 4, 5)
+            [HEADERS[3], HEADERS[4], HEADERS[5]].forEach(header => {
+                if (!header) return; // Skip if column doesn't exist
+                const v = num(r[header]);
+                if (!isNaN(v)) counts.set(Math.round(v), (counts.get(Math.round(v))||0)+1);
+            });
         });
-      });
-      const arr = [["Rating","Count"], ...[...counts.entries()].sort((a,b)=>a[0]-b[0]).map(([k,v])=>[String(k), v])];
-      const dt = google.visualization.arrayToDataTable(arr);
-      const opts = { legend:{position:"none"}, height:320, chartArea:{left:48, top:16, right:8, bottom:40}, hAxis:{title:"Rating"}, vAxis:{title:"Count", minValue:0} };
-      new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
+        const arr = [["Rating","Count"], ...[...counts.entries()].sort((a,b)=>a[0]-b[0]).map(([k,v])=>[String(k), v])];
+        const dt = google.visualization.arrayToDataTable(arr);
+        const opts = { legend:{position:"none"}, height:320, chartArea:{left:48, top:16, right:8, bottom:40}, hAxis:{title:"Rating"}, vAxis:{title:"Count", minValue:0} };
+        new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
     }
 
     function renderTable(){
-      const rows = filteredRows();
-      const start = (page-1)*pageSize;
-      const slice = rows.slice(start, start+pageSize);
+        const rows = filteredRows();
+        const start = (page-1)*pageSize;
+        const slice = rows.slice(start, start+pageSize);
 
-      // headers
-      const thead = document.getElementById("tableHead");
-      thead.innerHTML = "";
-      const trH = document.createElement("tr");
-      HEADERS.concat(["Source Sheet"]).forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
-      thead.appendChild(trH);
+        const thead = document.getElementById("tableHead");
+        const tbody = document.getElementById("tableBody");
+        const noResults = document.getElementById("noResults");
+        
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
 
-      // body
-      const tbody = document.getElementById("tableBody");
-      tbody.innerHTML = "";
-      slice.forEach(r=>{
-        const tr = document.createElement("tr");
-        HEADERS.forEach(h => { const td=document.createElement("td"); td.textContent = cellToText(r[h]); tr.appendChild(td); });
-        const tdS = document.createElement("td"); tdS.textContent = r["Source Sheet"] || ""; tr.appendChild(tdS);
-        tbody.appendChild(tr);
-      });
+        if (rows.length === 0) {
+            noResults.style.display = 'block';
+            thead.style.display = 'none';
+        } else {
+            noResults.style.display = 'none';
+            thead.style.display = '';
+            const trH = document.createElement("tr");
+            HEADERS.forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
+            thead.appendChild(trH);
 
-      document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
-      document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
+            slice.forEach(r=>{
+                const tr = document.createElement("tr");
+                HEADERS.forEach(h => { const td=document.createElement("td"); td.textContent = cellToText(r[h]); tr.appendChild(td); });
+                tbody.appendChild(tr);
+            });
+        }
+
+        document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
+        document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
+    }
+    
+    function numericCol(rows, colName) {
+        if (!HEADERS.includes(colName)) return [];
+        const vals = [];
+        for (const r of rows) {
+            const v = num(r[colName]);
+            if (!isNaN(v)) vals.push(v);
+        }
+        return vals;
     }
 
-    // ---------- Helpers that were missing / improved ----------
-
-    // Return numbers for a given col letter ("D"), using current HEADERS mapping
-    function numericCol(rows, colLetter) {
-      const colIdx = letterToIndex(colLetter) - 1;     // 0-based
-      const header = HEADERS[colIdx];
-      if (!header) return [];
-      const vals = [];
-      for (const r of rows) {
-        const v = num(r[header]);
-        if (!isNaN(v)) vals.push(v);
-      }
-      return vals;
-    }
-
-    // Sanitize header names (remove BOM + trim)
     function cleanHeaders(arr) {
-      return arr.map(h => String(h).replace(/^\uFEFF/, "").trim());
+        return arr.map(h => String(h).replace(/^\uFEFF/, "").trim());
     }
 
-    // ---- Data loading helpers ----
-    async function fetchCSV(tab){
-      const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${tab.gid}`;
-      const res = await fetch(url, {mode:"cors"});
-      if (!res.ok) {
-        console.error(`Failed to fetch ${tab.name}:`, res.status, res.statusText);
-        return { tabName: tab.name, headers: [], rows: [] };
-      }
-      const text = await res.text();
-      const parsed = Papa.parse(text.trim());
-      const data = parsed.data || [];
-      if (!data.length) return {tabName: tab.name, headers: [], rows: []};
-
-      const headers = cleanHeaders(data[0]);       // 👈 sanitize headers
-      const rows = data.slice(1).filter(r => r.join("").trim() !== "");
-      const width = headers.length;
-      const norm = rows.map(r => r.slice(0,width));
-      // console.log("Fetched", tab.name, "rows:", norm.length);
-      return { tabName: tab.name, headers, rows: norm };
-    }
-
-    // ---- utils ----
-    function letterToIndex(letter){ // A=1
-      let col=0, s=letter.toUpperCase();
-      for (let i=0;i<s.length;i++) col = col*26 + (s.charCodeAt(i)-64);
-      return col;
-    }
     function num(v){ if (v==null||v==="") return NaN; const n=Number(String(v).replace(/[^\d.\-]/g,"")); return isNaN(n)?NaN:n; }
     function toEpoch(cell){
-      if (cell==null||cell==="") return null;
-      // numeric serial (days)
-      const n = Number(cell);
-      if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
-        const base = Date.UTC(1899,11,30);
-        return base + Math.round(n*86400000);
-      }
-      const p = Date.parse(cell);
-      if (!isNaN(p)) return p;
-      const m = String(cell).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-      if (m){ const d=+m[1], mo=+m[2]-1, y=(+m[3]<100?2000+ +m[3]:+m[3]); const hh=+(m[4]||0), mm=+(m[5]||0), ss=+(m[6]||0); return Date.UTC(y,mo,d,hh,mm,ss); }
-      return null;
+        if (cell==null||cell==="") return null;
+        const n = Number(cell);
+        if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
+            const base = Date.UTC(1899,11,30);
+            return base + Math.round(n*86400000);
+        }
+        const p = Date.parse(cell);
+        if (!isNaN(p)) return p;
+        const m = String(cell).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (m){ const d=+m[1], mo=+m[2]-1, y=(+m[3]<100?2000+ +m[3]:+m[3]); const hh=+(m[4]||0), mm=+(m[5]||0), ss=+(m[6]||0); return Date.UTC(y,mo,d,hh,mm,ss); }
+        return null;
     }
-    function startOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 0,0,0); }
-    function endOfDay(d){ return new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23,59,59,999); }
     function fmt(n){ return (n==null||isNaN(n)) ? "—" : (Math.round(n*100)/100).toFixed(2); }
     function setText(id, t){ document.getElementById(id).textContent = t; }
     function cellToText(c){ return c==null ? "" : String(c); }
+
   </script>
 </body>
 </html>
