@@ -80,10 +80,14 @@
     .kpi-small-standalone .value{font-size:28px;font-weight:700;letter-spacing:-.02em;}
     .kpi-small-standalone .sub{color:var(--muted);font-size:12px;font-weight:500;}
     .chart{height:320px}.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--ring)} table{border-collapse:collapse;width:100%;background:var(--card-bg);transition: background-color 0.3s ease;}
-    th,td{padding:10px 12px;border-bottom:1px solid var(--ring);font-size:13px;transition: border-color 0.3s ease;} th{text-align:left;color:var(--muted);font-weight:600;background:rgba(0,0,0,0.02);position:sticky;top:0;font-size:12px;letter-spacing:.01em;text-transform:uppercase;}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--ring);font-size:13px;transition: border-color 0.3s ease, background-color 0.3s ease;} th{text-align:left;color:var(--muted);font-weight:600;background:rgba(0,0,0,0.02);position:sticky;top:0;font-size:12px;letter-spacing:.01em;text-transform:uppercase;}
     body.dark-mode th { background: rgba(255,255,255,0.05); }
     td.flagged { background: #fffbe6; color: #c88f00; font-weight: 600; }
     body.dark-mode td.flagged { background: rgba(252, 211, 77, 0.1); color: #facc15; }
+    tr.row-flagged td { background: rgba(255, 69, 58, 0.05); }
+    body.dark-mode tr.row-flagged td { background: rgba(255, 69, 58, 0.1); }
+    tr.row-flagged td.flagged { color: #d8000c; }
+    body.dark-mode tr.row-flagged td.flagged { color: #ff453a; }
     .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#eef5ff;color:#0b5bd3;border:1px solid #d8e7ff}
     body.dark-mode .badge { background: rgba(10, 132, 255, 0.15); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.3); }
     .muted{color:var(--muted)}.sep{height:1px;background:var(--ring);margin:16px 0;transition: background-color 0.3s ease;}.pager{display:flex;gap:8px;align-items:center}
@@ -267,7 +271,7 @@
 
       <div class="card" style="margin-top:16px;">
         <div style="display:flex;justify-content:space-between;align-items:center;">
-          <div class="label muted">Rows</div>
+          <div class="label muted">Feedbacks</div>
           <div class="pager">
             <span class="badge" id="rowCount">0</span>
             <button id="prevBtn">Prev</button>
@@ -703,6 +707,10 @@
             thead.appendChild(trH);
             slice.forEach(r=>{
                 const tr = document.createElement("tr");
+                const isRowFlagged = [HEADERS[3], HEADERS[4], HEADERS[5]].some(h => num(r[h]) < 7);
+                if (isRowFlagged) {
+                    tr.classList.add("row-flagged");
+                }
                 HEADERS.forEach(h => { 
                     const td=document.createElement("td"); 
                     const cellValue = r[h];
@@ -714,7 +722,9 @@
                 tbody.appendChild(tr);
             });
         }
-        document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
+        const total = rows.length;
+        const end = Math.min(start + pageSize, total);
+        document.getElementById("rowCount").textContent = total > 0 ? `${start + 1} - ${end} of ${total}` : "0 of 0";
         document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
     }
     
