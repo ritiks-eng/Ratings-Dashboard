@@ -301,6 +301,7 @@
     let page = 1, pageSize = 200;
     let MASTER = [];
     let HEADERS = [];
+    let resizeTimeout;
 
     google.charts.load("current", { "packages": ["corechart"] });
 
@@ -363,6 +364,15 @@
                 page++;
                 renderTable(rows);
             }
+        });
+
+        window.addEventListener('resize', () => {
+            clearTimeout(resizeTimeout);
+            resizeTimeout = setTimeout(() => {
+                if (MASTER.length > 0) {
+                    renderAll();
+                }
+            }, 500);
         });
     });
 
@@ -453,14 +463,18 @@
         const now = Date.now();
         const isCacheStale = !cacheTimestamp || (now - parseInt(cacheTimestamp)) > CACHE_DURATION_MINUTES * 60 * 1000;
 
+        const processAndDisplay = () => {
+            populateFilters();
+            skeletonLoader.classList.add('hidden');
+            dashboardContent.classList.remove('hidden');
+            renderAll();
+        };
+
         const loadFromCache = () => {
             const parsedCache = JSON.parse(cachedData);
             HEADERS = parsedCache.headers;
             MASTER = parsedCache.master;
-            
-            populateAndRender();
-            skeletonLoader.classList.add('hidden');
-            dashboardContent.classList.remove('hidden');
+            processAndDisplay();
         };
 
         const fetchFreshData = async (isUpdate = false) => {
@@ -510,14 +524,14 @@
                 localStorage.setItem('dashboardData', JSON.stringify(cachePayload));
                 localStorage.setItem('dashboardCacheTimestamp', Date.now());
 
-                return true; // Success
+                return true;
             } catch (e) {
                 console.error("Data fetch failed:", e);
                 if (!isUpdate) {
                     errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
                     skeletonLoader.classList.add('hidden');
                 }
-                return false; // Failure
+                return false;
             }
         };
 
@@ -531,21 +545,18 @@
         } else {
             const success = await fetchFreshData(false);
             if (success) {
-                populateAndRender();
-                skeletonLoader.classList.add('hidden');
-                dashboardContent.classList.remove('hidden');
+                processAndDisplay();
             }
         }
     }
     
-    function populateAndRender() {
+    function populateFilters() {
         const sel = document.getElementById("sourceFilter");
         sel.options.length = 1;
         [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s => {
             const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
         });
         handleTimeFilterChange();
-        renderAll();
     }
     
     function filteredRows(){
@@ -633,7 +644,6 @@
             const ts = r._epoch;
             if (ts==null) return;
             const d = new Date(ts);
-            // Use UTC methods to create a consistent daily key, regardless of browser timezone
             const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
             
             if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
