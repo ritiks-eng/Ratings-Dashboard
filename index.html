@@ -56,7 +56,7 @@
     @keyframes pulse { 50% { opacity: 0.3; } }
     .header-date { font-size: 13px; color: var(--text-muted); font-weight: 500; }
     @media (max-width: 768px) { .header-date, .subtitle { display: none; } h1 { font-size: 20px; } }
-    .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-3{grid-template-columns:repeat(3,1fr)}}
+    .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-4{grid-template-columns:repeat(4,1fr)}}
     .card{background:var(--card-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px; transition: all 0.3s ease;}
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.control{display:grid;gap:6px;min-width:180px}
     label{font-size:12px;color:var(--muted);font-weight:500;} input,select,button{appearance:none;background:var(--card-bg);border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font:inherit;font-weight:500;color:var(--text);transition: all 0.2s ease;}
@@ -149,14 +149,14 @@
       </div>
     </div>
 
-    <div class="grid grid-3" style="margin-top:16px;">
+    <div class="grid grid-4" style="margin-top:16px;">
       <div class="kpi-stack">
         <div class="card kpi">
           <div class="label">Average Lecture Satisfaction</div>
           <div class="value" id="avgD">—</div>
         </div>
         <div class="card kpi-small-standalone">
-          <div class="label">Lecture % &lt; 7</div>
+          <div class="label">Lecture Satisfaction % &lt; 7</div>
           <div class="value" id="pctFlaggedD">—</div>
           <div class="sub muted" id="cntFlaggedD">—</div>
         </div>
@@ -167,7 +167,7 @@
           <div class="value" id="avgE">—</div>
         </div>
         <div class="card kpi-small-standalone">
-          <div class="label">Concept % &lt; 7</div>
+          <div class="label">Concept Understandability % &lt; 7</div>
           <div class="value" id="pctFlaggedE">—</div>
           <div class="sub muted" id="cntFlaggedE">—</div>
         </div>
@@ -178,9 +178,20 @@
           <div class="value" id="avgF">—</div>
         </div>
         <div class="card kpi-small-standalone">
-          <div class="label">Faculty % &lt; 7</div>
+          <div class="label">Faculty Approachability % &lt; 7</div>
           <div class="value" id="pctFlaggedF">—</div>
           <div class="sub muted" id="cntFlaggedF">—</div>
+        </div>
+      </div>
+       <div class="kpi-stack">
+        <div class="card kpi">
+          <div class="label">Overall Average</div>
+          <div class="value" id="avgOverall">—</div>
+        </div>
+        <div class="card kpi-small-standalone">
+          <div class="label">Overall % &lt; 7</div>
+          <div class="value" id="pctFlaggedOverall">—</div>
+          <div class="sub muted" id="cntFlaggedOverall">—</div>
         </div>
       </div>
     </div>
@@ -269,8 +280,19 @@
             handleTimeFilterChange();
         });
 
-        document.getElementById("prevBtn").addEventListener("click", () => { if (page > 1) { page--; renderTable(); } });
-        document.getElementById("nextBtn").addEventListener("click", () => { if ((page * pageSize) < filteredRows().length) { page++; renderTable(); } });
+        document.getElementById("prevBtn").addEventListener("click", () => {
+            if (page > 1) {
+                page--;
+                renderTable(filteredRows());
+            }
+        });
+        document.getElementById("nextBtn").addEventListener("click", () => {
+            const rows = filteredRows();
+            if ((page * pageSize) < rows.length) {
+                page++;
+                renderTable(rows);
+            }
+        });
     });
 
     function updateHeaderDate() {
@@ -450,6 +472,14 @@
         setText("cntFlaggedE", eVals.length ? `${flaggedE} of ${eVals.length}` : "—");
         setText("pctFlaggedF", fVals.length ? (Math.round((flaggedF/fVals.length)*1000)/10)+"%" : "—");
         setText("cntFlaggedF", fVals.length ? `${flaggedF} of ${fVals.length}` : "—");
+        
+        const allVals = [...dVals, ...eVals, ...fVals];
+        const avgOverallVal = avg(allVals);
+        animateValue("avgOverall", avgOverallVal);
+
+        const flaggedOverall = allVals.filter(v => v < 7).length;
+        setText("pctFlaggedOverall", allVals.length ? (Math.round((flaggedOverall/allVals.length)*1000)/10)+"%" : "—");
+        setText("cntFlaggedOverall", allVals.length ? `${flaggedOverall} of ${allVals.length}` : "—");
     }
     
     function getChartOptions(extraOptions = {}) {
@@ -521,8 +551,7 @@
         new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
     }
 
-    function renderTable(rows = null){
-        if (rows === null) rows = filteredRows();
+    function renderTable(rows) {
         const start = (page-1)*pageSize;
         const slice = rows.slice(start, start+pageSize);
         const thead = document.getElementById("tableHead"), tbody = document.getElementById("tableBody"), noResults = document.getElementById("noResults");
