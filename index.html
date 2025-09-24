@@ -1,474 +1,489 @@
 <!doctype html>
 <html>
 <head>
-    <meta charset="utf-8" />
-    <title>Ratings Dashboard</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://www.gstatic.com/charts/loader.js"></script>
-    <style>
-        :root{--bg:#f5f5f7;--card:#fff;--text:#111;--muted:#6e6e73;--ring:rgba(0,0,0,.08);--accent:#0071e3;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:18px}
-        *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial;background:linear-gradient(180deg,#fafafa 0%,var(--bg) 100%);color:var(--text)}
-        header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(180%) blur(12px);background:rgba(255,255,255,.7);border-bottom:1px solid rgba(0,0,0,.06)}
-        .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}.title{display:flex;gap:12px;align-items:baseline} h1{font-size:28px;margin:8px 0;font-weight:700;letter-spacing:-.02em}.subtitle{color:var(--muted);font-size:14px}
-        .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-4{grid-template-columns:repeat(4,1fr)}}
-        .card{background:var(--card);border:1px solid var(--ring);border-radius:18px;box-shadow:var(--shadow);padding:16px}
-        .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.control{display:grid;gap:6px;min-width:180px}
-        label{font-size:12px;color:var(--muted)} input,select,button{appearance:none;background:#fff;border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font:inherit}
-        input:focus,select:focus{box-shadow:0 0 0 4px rgba(0,113,227,.15);border-color:var(--accent)}
-        button.primary{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
-        button{cursor:pointer;}
-        .kpi{display:grid;gap:4px}.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:28px;font-weight:700}.kpi .sub{color:var(--muted);font-size:12px}
-        .chart{height:320px}.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--ring)} table{border-collapse:collapse;width:100%;background:#fff}
-        th,td{padding:10px 12px;border-bottom:1px solid #efefef;font-size:13px} th{text-align:left;color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
-        .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#eef5ff;color:#0b5bd3;border:1px solid #d8e7ff}
-        .muted{color:#6e6e73}.sep{height:1px;background:rgba(0,0,0,.06);margin:12px 0}.pager{display:flex;gap:8px;align-items:center}
-        .error-banner{background:#fff2f2;border:1px solid #ffcccc;color:#d8000c;padding:12px;border-radius:12px;margin-bottom:16px;font-size:14px;}
-        .error-banner ul{margin:8px 0 0 20px;padding:0;}
-        input[type="checkbox"]{appearance:none;-webkit-appearance:none;position:relative;width:1.25rem;height:1.25rem;border:1.5px solid var(--ring);border-radius:9999px;cursor:pointer;transition:all .2s ease-in-out;flex-shrink:0}
-        input[type="checkbox"]:checked{background-color:var(--accent);border-color:var(--accent)}
-        input[type="checkbox"]::before{content:'';position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);width:.5rem;height:.5rem;border-radius:9999px;background-color:#fff;transition:transform .2s ease-in-out}
-        input[type="checkbox"]:checked::before{transform:translate(-50%,-50%) scale(1)}
-        input[type="checkbox"]:focus{box-shadow:0 0 0 4px rgba(0,113,227,.15)}
-    </style>
+  <meta charset="utf-8" />
+  <title>Ratings Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Google Charts -->
+  <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <style>
+    :root{--bg:#f5f5f7;--card:#fff;--text:#111;--muted:#6e6e73;--ring:rgba(0,0,0,.08);--accent:#0071e3;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:18px}
+    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial;background:linear-gradient(180deg,#fafafa 0%,var(--bg) 100%);color:var(--text)}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(180%) blur(12px);background:rgba(255,255,255,.7);border-bottom:1px solid rgba(0,0,0,.06)}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}.title{display:flex;gap:12px;align-items:baseline} h1{font-size:28px;margin:8px 0;font-weight:700;letter-spacing:-.02em}.subtitle{color:var(--muted);font-size:14px}
+    .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-4{grid-template-columns:repeat(4,1fr)}}
+    .card{background:var(--card);border:1px solid var(--ring);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+    .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.control{display:grid;gap:6px;min-width:180px}
+    label{font-size:12px;color:var(--muted)} input,select,button{appearance:none;background:#fff;border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font:inherit}
+    input:focus,select:focus{box-shadow:0 0 0 4px rgba(0,113,227,.15);border-color:var(--accent)}
+    button.primary{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
+    .kpi{display:grid;gap:4px}.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:28px;font-weight:700}.kpi .sub{color:var(--muted);font-size:12px}
+    .chart{height:320px}.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--ring)} table{border-collapse:collapse;width:100%;background:#fff}
+    th,td{padding:10px 12px;border-bottom:1px solid #efefef;font-size:13px} th{text-align:left;color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
+    .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#eef5ff;color:#0b5bd3;border:1px solid #d8e7ff}
+    .muted{color:#6e6e73}.sep{height:1px;background:rgba(0,0,0,.06);margin:12px 0}.pager{display:flex;gap:8px;align-items:center}
+    .error-banner{background:#fff2f2;border:1px solid #ffcccc;color:#d8000c;padding:12px;border-radius:12px;margin-bottom:16px;font-size:14px;}
+    .error-banner ul{margin:8px 0 0 20px;padding:0;}
+
+    /* Custom Checkbox for a cleaner, more consistent UI */
+    input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        position: relative;
+        width: 1.25rem;
+        height: 1.25rem;
+        border: 1.5px solid var(--ring);
+        border-radius: 9999px;
+        cursor: pointer;
+        transition: all 0.2s ease-in-out;
+        flex-shrink: 0;
+    }
+    input[type="checkbox"]:checked {
+        background-color: var(--accent);
+        border-color: var(--accent);
+    }
+    input[type="checkbox"]::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%) scale(0);
+        width: 0.5rem;
+        height: 0.5rem;
+        border-radius: 9999px;
+        background-color: white;
+        transition: transform 0.2s ease-in-out;
+    }
+    input[type="checkbox"]:checked::before {
+        transform: translate(-50%, -50%) scale(1);
+    }
+    input[type="checkbox"]:focus {
+        box-shadow: 0 0 0 4px rgba(0,113,227,.15);
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <div class="wrap">
-            <div class="title">
-                <h1>Ratings Dashboard</h1>
-                <span class="subtitle">Live from Google Sheets</span>
-            </div>
-        </div>
-    </header>
+  <header>
+    <div class="wrap">
+      <div class="title">
+        <h1>Ratings Dashboard</h1>
+        <span class="subtitle">Live from Google Sheets</span>
+      </div>
+    </div>
+  </header>
 
-    <main class="wrap" style="padding-top:20px;">
-        <div id="errorContainer"></div>
-        <div class="card">
-            <div class="controls">
-                <div class="control">
-                    <label>Time Range</label>
-                    <select id="timeFilter">
-                        <option value="all">All time</option>
-                        <option value="this-week">This Week</option>
-                        <option value="last-week">Last Week</option>
-                        <option value="this-month">This Month</option>
-                        <option value="last-month">Last Month</option>
-                        <option value="custom">Custom Range</option>
-                    </select>
-                </div>
-                <div class="control"><label>From</label><input type="date" id="dateFrom"></div>
-                <div class="control"><label>To</label><input type="date" id="dateTo"></div>
-                <div class="control" style="min-width:260px"><label>Source Sheet</label><select id="sourceFilter"><option value="">All sources</option></select></div>
-                <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Rating < 7</span></label></div>
-                <div class="control"><label>&nbsp;</label><button class="primary" id="applyBtn">Apply</button></div>
-                <div class="control"><label>&nbsp;</label><button id="exportBtn">Export CSV</button></div>
-            </div>
+  <main class="wrap" style="padding-top:20px;">
+    <div id="errorContainer"></div>
+    <div class="card">
+      <div class="controls">
+        <div class="control">
+          <label>Time Range</label>
+          <select id="timeFilter">
+            <option value="all">All time</option>
+            <option value="this-week">This Week</option>
+            <option value="last-week">Last Week</option>
+            <option value="this-month">This Month</option>
+            <option value="last-month">Last Month</option>
+            <option value="custom">Custom Range</option>
+          </select>
         </div>
-
-        <div class="grid grid-4" style="margin-top:16px;">
-            <div class="card kpi"><div class="label">Average Lecture Satisfaction</div><div class="value" id="kpi-0">—</div></div>
-            <div class="card kpi"><div class="label">Average Concept Understandability</div><div class="value" id="kpi-1">—</div></div>
-            <div class="card kpi"><div class="label">Average Faculty Approachability</div><div class="value" id="kpi-2">—</div></div>
-            <div class="card kpi"><div class="label">% less than 7</div><div class="value" id="pctFlagged">—</div><div class="sub muted" id="cntFlagged">—</div></div>
-        </div>
-
-        <div class="grid grid-2" style="margin-top:16px;">
-            <div class="card"><div class="label muted" style="margin-bottom:6px;">Trend (daily avg)</div><div class="chart" id="trendChart"></div></div>
-            <div class="card"><div class="label muted" style="margin-bottom:6px;">Distribution</div><div class="chart" id="distChart"></div></div>
-        </div>
-
-        <div class="card" style="margin-top:16px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;">
-                <div class="label muted">Rows</div>
-                <div class="pager">
-                    <span class="badge" id="rowCount">0</span>
-                    <button id="prevBtn">Prev</button>
-                    <span id="pageInfo" class="muted">–</span>
-                    <button id="nextBtn">Next</button>
-                </div>
-            </div>
-            <div class="sep"></div>
-            <div class="table-wrap">
-                <table id="dataTable">
-                    <thead id="tableHead"></thead>
-                    <tbody id="tableBody"></tbody>
-                </table>
-                <div id="noResults" style="display:none; text-align:center; padding: 40px; color: var(--muted);">No results found for the selected filters.</div>
-            </div>
-        </div>
-    </main>
-
-    <div id="loader" style="display: flex; justify-content: center; align-items: center; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.8); z-index: 999; font-size: 1.2em; color: var(--muted);">
-        Loading Dashboard Data...
+        <div class="control"><label>From</label><input type="date" id="dateFrom"></div>
+        <div class="control"><label>To</label><input type="date" id="dateTo"></div>
+        <div class="control" style="min-width:260px"><label>Source Sheet</label><select id="sourceFilter"><option value="">All sources</option></select></div>
+        <div class="control"><label>&nbsp;</label><label style="display:flex;gap:8px;align-items:center;"><input type="checkbox" id="onlyFlagged"><span>Rating < 7</span></label></div>
+        <div class="control"><label>&nbsp;</label><button class="primary" id="applyBtn">Apply</button></div>
+      </div>
     </div>
 
-    <script>
-        // ==== CONFIG ====
-        const API_URL = "https://script.google.com/macros/s/AKfycbx_w-Sq22CxSatJLcMFQ7WAovZjQ05vPNMOk-orVWH3-s7SBYm8DRRhA_5Xrao6HdBbng/exec";
-        const TIMESTAMP_HEADER = "Timestamp";
+    <div class="grid grid-4" style="margin-top:16px;">
+      <div class="card kpi"><div class="label">Average Lecture Satisfaction</div><div class="value" id="avgD">—</div></div>
+      <div class="card kpi"><div class="label">Average Concept Understandability</div><div class="value" id="avgE">—</div></div>
+      <div class="card kpi"><div class="label">Average Faculty Approachability</div><div class="value" id="avgF">—</div></div>
+      <div class="card kpi"><div class="label">% less than 7</div><div class="value" id="pctFlagged">—</div><div class="sub muted" id="cntFlagged">—</div></div>
+    </div>
+
+    <div class="grid grid-2" style="margin-top:16px;">
+      <div class="card"><div class="label muted" style="margin-bottom:6px;">Trend (daily avg)</div><div class="chart" id="trendChart"></div></div>
+      <div class="card"><div class="label muted" style="margin-bottom:6px;">Distribution</div><div class="chart" id="distChart"></div></div>
+    </div>
+
+    <div class="card" style="margin-top:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="label muted">Rows</div>
+        <div class="pager">
+          <span class="badge" id="rowCount">0</span>
+          <button id="prevBtn">Prev</button>
+          <span id="pageInfo" class="muted">–</span>
+          <button id="nextBtn">Next</button>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="table-wrap">
+        <table id="dataTable">
+          <thead id="tableHead"></thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+        <div id="noResults" style="display:none; text-align:center; padding: 40px; color: var(--muted);">No results found for the selected filters.</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // ==== CONFIG ====
+    const API_URL = "https://script.google.com/macros/s/AKfycbx_w-Sq22CxSatJLcMFQ7WAovZjQ05vPNMOk-orVWH3-s7SBYm8DRRhA_5Xrao6HdBbng/exec";
+
+    const TIMESTAMP_HEADER = "Timestamp";
+    // RATING_COLS is no longer used, we will use fixed column positions D, E, F (indices 3, 4, 5)
+
+    let page = 1, pageSize = 200;
+    let MASTER = [];
+    let HEADERS = [];
+
+    google.charts.load("current", { "packages": ["corechart"] });
+
+    document.addEventListener("DOMContentLoaded", () => {
+        google.charts.setOnLoadCallback(init);
         
-        // CHANGED: Define rating columns by their header names for flexibility
-        const RATING_HEADERS = [
-            "Lecture Satisfaction",
-            "Concept Understandability",
-            "Faculty Approachability"
-        ];
-        
-        let page = 1, pageSize = 200;
-        let MASTER = [];
-        let HEADERS = [];
-
-        google.charts.load("current", { "packages": ["corechart"] });
-
-        document.addEventListener("DOMContentLoaded", () => {
-            google.charts.setOnLoadCallback(init);
-            
-            document.getElementById("applyBtn").addEventListener("click", handleFilterChange);
-            document.getElementById("timeFilter").addEventListener("change", handleTimeFilterChange);
-            document.getElementById("exportBtn").addEventListener("click", exportToCSV); // ADDED
-            
-            document.getElementById("dateFrom").addEventListener("change", () => {
-                const timeFilter = document.getElementById("timeFilter");
-                if (timeFilter.value !== 'custom') { timeFilter.value = 'custom'; handleTimeFilterChange(); }
-            });
-            document.getElementById("dateTo").addEventListener("change", () => {
-                const timeFilter = document.getElementById("timeFilter");
-                if (timeFilter.value !== 'custom') { timeFilter.value = 'custom'; handleTimeFilterChange(); }
-            });
-
-            document.getElementById("prevBtn").addEventListener("click", () => { if (page > 1) { page--; renderTable(); } });
-            document.getElementById("nextBtn").addEventListener("click", () => { if ((page * pageSize) < filteredRows().length) { page++; renderTable(); } });
+        document.getElementById("applyBtn").addEventListener("click", handleFilterChange);
+        document.getElementById("timeFilter").addEventListener("change", handleTimeFilterChange);
+        document.getElementById("dateFrom").addEventListener("change", () => {
+            const timeFilter = document.getElementById("timeFilter");
+            if (timeFilter.value !== 'custom') {
+                timeFilter.value = 'custom';
+                handleTimeFilterChange(); // This will re-enable the date inputs
+            }
+        });
+        document.getElementById("dateTo").addEventListener("change", () => {
+            const timeFilter = document.getElementById("timeFilter");
+            if (timeFilter.value !== 'custom') {
+                timeFilter.value = 'custom';
+                handleTimeFilterChange(); // This will re-enable the date inputs
+            }
         });
 
-        function handleFilterChange() {
-            page = 1;
+        document.getElementById("prevBtn").addEventListener("click", () => { if (page > 1) { page--; renderTable(); } });
+        document.getElementById("nextBtn").addEventListener("click", () => { if ((page * pageSize) < filteredRows().length) { page++; renderTable(); } });
+    });
+
+    function handleFilterChange() {
+        page = 1;
+        renderAll();
+    }
+
+    function handleTimeFilterChange() {
+        const selection = document.getElementById("timeFilter").value;
+        const dateFromInput = document.getElementById("dateFrom");
+        const dateToInput = document.getElementById("dateTo");
+        
+        const now = new Date();
+        let startDate, endDate;
+
+        const formatDate = (date) => date ? date.toISOString().split('T')[0] : "";
+
+        switch (selection) {
+            case "this-week": {
+                const day = now.getDay() || 7; // Sunday is 0, make it 7
+                startDate = new Date(now);
+                startDate.setDate(now.getDate() - day + 1);
+                endDate = new Date();
+                break;
+            }
+            case "last-week": {
+                const day = now.getDay() || 7;
+                endDate = new Date(now);
+                endDate.setDate(now.getDate() - day); // Last Sunday
+                startDate = new Date(endDate);
+                startDate.setDate(endDate.getDate() - 6); // Monday of last week
+                break;
+            }
+            case "this-month": {
+                startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+                endDate = new Date();
+                break;
+            }
+            case "last-month": {
+                startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+                break;
+            }
+            case "all":
+            default: {
+                startDate = null;
+                endDate = null;
+                break;
+            }
+        }
+
+        if (selection !== 'custom') {
+            dateFromInput.value = formatDate(startDate);
+            dateToInput.value = formatDate(endDate);
+            dateFromInput.disabled = true;
+            dateToInput.disabled = true;
+        } else {
+            dateFromInput.disabled = false;
+            dateToInput.disabled = false;
+        }
+    }
+
+    async function init() {
+        const errorContainer = document.getElementById("errorContainer");
+        errorContainer.innerHTML = ''; // Clear previous errors
+
+        if (!API_URL || API_URL === "YOUR_APPS_SCRIPT_URL_GOES_HERE") {
+             errorContainer.innerHTML = `<div class="error-banner"><strong>Configuration Error:</strong> Please paste your Google Apps Script URL into the API_URL constant in the script.</div>`;
+             return;
+        }
+
+        try {
+            const response = await fetch(API_URL);
+            if (!response.ok) {
+                throw new Error(`The Apps Script returned an error (Status: ${response.status})`);
+            }
+            const data = await response.json();
+
+            if (data.status === 'error') {
+                throw new Error(`Apps Script execution failed: ${data.message}`);
+            }
+            
+            const combined = [];
+            let headerRef = null;
+            const headerValidationErrors = [];
+            const sheetNames = Object.keys(data);
+
+            sheetNames.forEach(sheetName => {
+                const sheetRows = data[sheetName];
+                if (!sheetRows || sheetRows.length < 2) return; 
+
+                const headers = cleanHeaders(sheetRows[0]);
+                const rows = sheetRows.slice(1);
+
+                if (!headerRef) {
+                    headerRef = headers;
+                } else {
+                    if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
+                         headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
+                         return;
+                    }
+                }
+                
+                rows.forEach(r => {
+                    const obj = {};
+                    headerRef.forEach((h, i) => obj[h] = r[i] ?? "");
+                    obj["Source Sheet"] = sheetName;
+                    combined.push(obj);
+                });
+            });
+
+            // Pre-process timestamps for performance and reliability
+            combined.forEach(r => {
+                r._epoch = toEpoch(r[TIMESTAMP_HEADER]);
+            });
+
+            if (headerValidationErrors.length > 0) {
+                let errorHTML = '<div class="error-banner"><strong>Data Loading Warning:</strong><ul>';
+                headerValidationErrors.forEach(e => errorHTML += `<li>${e}</li>`);
+                errorHTML += '</ul></div>';
+                errorContainer.innerHTML = errorHTML;
+            }
+
+            if (!headerRef) {
+                throw new Error("Could not load any data. Please check your Apps Script and ensure the underlying sheets have data.");
+            }
+
+            HEADERS = headerRef.concat("Source Sheet");
+            MASTER = combined;
+
+            const sel = document.getElementById("sourceFilter");
+            sel.options.length = 1;
+            [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s => {
+                const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
+            });
+
+            handleTimeFilterChange(); // Set initial state
             renderAll();
+
+        } catch (e) {
+            console.error("Dashboard initialization failed:", e);
+            errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
         }
-
-        function handleTimeFilterChange() {
-            const selection = document.getElementById("timeFilter").value;
-            const dateFromInput = document.getElementById("dateFrom");
-            const dateToInput = document.getElementById("dateTo");
-            
-            const now = new Date();
-            let startDate, endDate;
-
-            const formatDate = (date) => date ? date.toISOString().split('T')[0] : "";
-
-            switch (selection) {
-                case "this-week": {
-                    const day = now.getDay() || 7;
-                    startDate = new Date(now);
-                    startDate.setDate(now.getDate() - day + 1);
-                    endDate = new Date();
-                    break;
-                }
-                case "last-week": {
-                    const day = now.getDay() || 7;
-                    endDate = new Date(now);
-                    endDate.setDate(now.getDate() - day);
-                    startDate = new Date(endDate);
-                    startDate.setDate(endDate.getDate() - 6);
-                    break;
-                }
-                case "this-month": {
-                    startDate = new Date(now.getFullYear(), now.getMonth(), 1);
-                    endDate = new Date();
-                    break;
-                }
-                case "last-month": {
-                    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                    endDate = new Date(now.getFullYear(), now.getMonth(), 0);
-                    break;
-                }
-                case "all":
-                default: {
-                    startDate = null;
-                    endDate = null;
-                    break;
-                }
-            }
-
-            if (selection !== 'custom') {
-                dateFromInput.value = formatDate(startDate);
-                dateToInput.value = formatDate(endDate);
-                dateFromInput.disabled = true;
-                dateToInput.disabled = true;
-            } else {
-                dateFromInput.disabled = false;
-                dateToInput.disabled = false;
-            }
-        }
-
-        async function init() {
-            const loader = document.getElementById("loader");
-            loader.style.display = 'flex'; // CHANGED: Show loader
-
-            const errorContainer = document.getElementById("errorContainer");
-            errorContainer.innerHTML = '';
-
-            if (!API_URL || API_URL.includes("YOUR_APPS_SCRIPT_URL")) {
-                errorContainer.innerHTML = `<div class="error-banner"><strong>Configuration Error:</strong> Please set the API_URL constant.</div>`;
-                loader.style.display = 'none'; // CHANGED: Hide loader on error
-                return;
-            }
-
-            try {
-                const response = await fetch(API_URL);
-                if (!response.ok) throw new Error(`Network error (Status: ${response.status})`);
-                
-                const data = await response.json();
-                if (data.status === 'error') throw new Error(`Apps Script error: ${data.message}`);
-                
-                const combined = [];
-                let headerRef = null;
-                const headerValidationErrors = [];
-                const sheetNames = Object.keys(data);
-
-                sheetNames.forEach(sheetName => {
-                    const sheetRows = data[sheetName];
-                    if (!sheetRows || sheetRows.length < 2) return; 
-
-                    const headers = cleanHeaders(sheetRows[0]);
-                    const rows = sheetRows.slice(1);
-
-                    if (!headerRef) {
-                        headerRef = headers;
-                    } else if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
-                        headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
-                        return;
-                    }
-                    
-                    rows.forEach(r => {
-                        const obj = {};
-                        headerRef.forEach((h, i) => obj[h] = r[i] ?? "");
-                        obj["Source Sheet"] = sheetName;
-                        combined.push(obj);
-                    });
-                });
-
-                combined.forEach(r => { r._epoch = toEpoch(r[TIMESTAMP_HEADER]); });
-
-                if (headerValidationErrors.length > 0) {
-                    let errorHTML = '<div class="error-banner"><strong>Data Loading Warning:</strong><ul>';
-                    headerValidationErrors.forEach(e => errorHTML += `<li>${e}</li>`);
-                    errorHTML += '</ul></div>';
-                    errorContainer.innerHTML = errorHTML;
-                }
-
-                if (!headerRef) throw new Error("No data loaded. Check your sheet and Apps Script.");
-
-                HEADERS = headerRef.concat("Source Sheet");
-                MASTER = combined;
-
-                const sel = document.getElementById("sourceFilter");
-                sel.options.length = 1;
-                [...new Set(MASTER.map(r => r["Source Sheet"]).filter(Boolean))].sort().forEach(s => {
-                    const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
-                });
-
-                handleTimeFilterChange();
-                renderAll();
-            } catch (e) {
-                console.error("Dashboard initialization failed:", e);
-                errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
-            } finally {
-                loader.style.display = 'none'; // CHANGED: Hide loader when done
-            }
-        }
+    }
+    
+    function filteredRows(){
+        const fromVal = document.getElementById("dateFrom").value;
+        const toVal = document.getElementById("dateTo").value;
         
-        function filteredRows(){
-            const fromVal = document.getElementById("dateFrom").value;
-            const toVal = document.getElementById("dateTo").value;
-            const dfEpoch = fromVal ? new Date(fromVal + 'T00:00:00.000Z').getTime() : null;
-            const dtEpoch = toVal ? new Date(toVal + 'T23:59:59.999Z').getTime() : null;
-            
-            const src = document.getElementById("sourceFilter").value || "";
-            const onlyFlagged = document.getElementById("onlyFlagged").checked;
-
-            const rows = MASTER.filter(r => {
-                if (src && r["Source Sheet"] !== src) return false;
-                
-                // CHANGED: Use RATING_HEADERS config for filtering
-                if (onlyFlagged) {
-                    const anyLT7 = RATING_HEADERS.some(header => num(r[header]) < 7);
-                    if (!anyLT7) return false;
-                }
-                
-                const ts = r._epoch;
-                if (dfEpoch && (ts == null || ts < dfEpoch)) return false;
-                if (dtEpoch && (ts == null || ts > dtEpoch)) return false;
-                return true;
-            }).sort((a,b) => (b._epoch || 0) - (a._epoch || 0));
-
-            return rows;
-        }
-
-        function renderAll(){
-            renderKPIs();
-            drawTrend();
-            drawDist();
-            renderTable();
-        }
-
-        function renderKPIs(){
-            const rows = filteredRows();
-            const avg = arr => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : null;
-
-            // CHANGED: Dynamically calculate KPIs based on RATING_HEADERS
-            RATING_HEADERS.forEach((header, index) => {
-                const vals = numericCol(rows, header);
-                setText(`kpi-${index}`, fmt(avg(vals)));
-            });
-
-            const flagged = rows.filter(r => RATING_HEADERS.some(h => num(r[h]) < 7)).length;
-            setText("pctFlagged", rows.length ? (Math.round((flagged / rows.length) * 1000) / 10) + "%" : "—");
-            setText("cntFlagged", rows.length ? `${flagged} of ${rows.length}` : "—");
-        }
-
-        function drawTrend(){
-            const rows = filteredRows();
-            const byDay = new Map();
-
-            rows.forEach(r => {
-                const ts = r._epoch;
-                if (ts == null) return;
-                const d = new Date(ts);
-                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                
-                if (!byDay.has(key)) {
-                    const newEntry = { counts: Array(RATING_HEADERS.length).fill(0), sums: Array(RATING_HEADERS.length).fill(0) };
-                    byDay.set(key, newEntry);
-                }
-                
-                const entry = byDay.get(key);
-                RATING_HEADERS.forEach((header, i) => {
-                    const rating = num(r[header]);
-                    if (!isNaN(rating)) {
-                        entry.sums[i] += rating;
-                        entry.counts[i]++;
-                    }
-                });
-            });
-
-            const arr = [...byDay.entries()].sort((a,b)=> new Date(a[0]) - new Date(b[0]))
-                .map(([k,v]) => {
-                    const avgs = v.sums.map((sum, i) => v.counts[i] > 0 ? sum / v.counts[i] : null);
-                    return [new Date(k), ...avgs];
-                });
-
-            const dt = new google.visualization.DataTable();
-            dt.addColumn("date", "Date");
-            RATING_HEADERS.forEach(h => dt.addColumn("number", `Average ${h}`)); // CHANGED
-            dt.addRows(arr);
-            
-            const opts = { legend:{position:"top"}, height:320, chartArea:{left:48, top:36, right:8, bottom:40}, hAxis:{format:"MMM d"}, vAxis:{viewWindow:{min:0}}, lineWidth:3, pointSize:4 };
-            new google.visualization.LineChart(document.getElementById("trendChart")).draw(dt, opts);
-        }
-
-        function drawDist(){
-            const rows = filteredRows();
-            const counts = new Map();
-            rows.forEach(r => {
-                // CHANGED: Use RATING_HEADERS config
-                RATING_HEADERS.forEach(header => {
-                    if (!header) return;
-                    const v = num(r[header]);
-                    if (!isNaN(v)) counts.set(Math.round(v), (counts.get(Math.round(v)) || 0) + 1);
-                });
-            });
-            const arr = [["Rating", "Count"], ...[...counts.entries()].sort((a,b) => a[0] - b[0]).map(([k,v]) => [String(k), v])];
-            const dt = google.visualization.arrayToDataTable(arr);
-            const opts = { legend:{position:"none"}, height:320, chartArea:{left:48, top:16, right:8, bottom:40}, hAxis:{title:"Rating"}, vAxis:{title:"Count", minValue:0} };
-            new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
-        }
-
-        function renderTable(){
-            const rows = filteredRows();
-            const start = (page - 1) * pageSize;
-            const slice = rows.slice(start, start + pageSize);
-
-            const thead = document.getElementById("tableHead");
-            const tbody = document.getElementById("tableBody");
-            const noResults = document.getElementById("noResults");
-            
-            thead.innerHTML = "";
-            tbody.innerHTML = "";
-
-            if (rows.length === 0) {
-                noResults.style.display = 'block';
-                thead.style.display = 'none';
-            } else {
-                noResults.style.display = 'none';
-                thead.style.display = '';
-                const trH = document.createElement("tr");
-                HEADERS.forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
-                thead.appendChild(trH);
-
-                slice.forEach(r => {
-                    const tr = document.createElement("tr");
-                    HEADERS.forEach(h => { const td=document.createElement("td"); td.textContent = cellToText(r[h]); tr.appendChild(td); });
-                    tbody.appendChild(tr);
-                });
-            }
-
-            document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
-            document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length / pageSize))}`;
-        }
+        // Treat YYYY-MM-DD as UTC to avoid timezone issues for robust filtering
+        const dfEpoch = fromVal ? new Date(fromVal + 'T00:00:00.000Z').getTime() : null;
+        const dtEpoch = toVal ? new Date(toVal + 'T23:59:59.999Z').getTime() : null;
         
-        // ADDED: Export to CSV function
-        function exportToCSV() {
-            const rows = filteredRows();
-            if (rows.length === 0) {
-                alert("No data to export for the current filters.");
-                return;
+        const src = document.getElementById("sourceFilter").value || "";
+        const onlyFlagged = document.getElementById("onlyFlagged").checked;
+
+        const rows = MASTER.filter(r => {
+            if (src && r["Source Sheet"] !== src) return false;
+            if (onlyFlagged) {
+                // Check columns D, E, F by their fixed position (index 3, 4, 5)
+                const ratingHeaders = [HEADERS[3], HEADERS[4], HEADERS[5]].filter(Boolean);
+                const anyLT7 = ratingHeaders.some(header => num(r[header]) < 7);
+                if (!anyLT7) return false;
             }
+            const ts = r._epoch; // Use pre-parsed timestamp
+            if (dfEpoch && (ts == null || ts < dfEpoch)) return false;
+            if (dtEpoch && (ts == null || ts > dtEpoch)) return false;
+            return true;
+        }).sort((a,b)=>{
+            const ta = a._epoch; // Use pre-parsed timestamp
+            const tb = b._epoch; // Use pre-parsed timestamp
+            if (ta==null && tb==null) return 0;
+            if (ta==null) return 1;
+            if (tb==null) return -1;
+            return tb - ta; 
+        });
 
-            let csvContent = "";
-            csvContent += HEADERS.map(h => `"${h.replace(/"/g, '""')}"`).join(",") + "\r\n";
+        return rows;
+    }
 
-            rows.forEach(row => {
-                const rowData = HEADERS.map(header => {
-                    const cell = row[header] === null || row[header] === undefined ? "" : String(row[header]);
-                    return `"${cell.replace(/"/g, '""')}"`;
-                });
-                csvContent += rowData.join(",") + "\r\n";
+    function renderAll(){
+        renderKPIs();
+        drawTrend();
+        drawDist();
+        renderTable();
+    }
+
+    function renderKPIs(){
+        const rows = filteredRows();
+        // Access columns D, E, F by their fixed position (index 3, 4, 5)
+        const headerD = HEADERS[3];
+        const headerE = HEADERS[4];
+        const headerF = HEADERS[5];
+
+        const dVals = numericCol(rows, headerD);
+        const eVals = numericCol(rows, headerE);
+        const fVals = numericCol(rows, headerF);
+        const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+
+        setText("avgD", fmt(avg(dVals)));
+        setText("avgE", fmt(avg(eVals)));
+        setText("avgF", fmt(avg(fVals)));
+
+        const ratingHeaders = [headerD, headerE, headerF].filter(Boolean);
+        const flagged = rows.filter(r => ratingHeaders.some(h => num(r[h]) < 7)).length;
+        setText("pctFlagged", rows.length ? (Math.round((flagged/rows.length)*1000)/10)+"%" : "—");
+        setText("cntFlagged", rows.length ? `${flagged} of ${rows.length}` : "—");
+    }
+
+    function drawTrend(){
+        const rows = filteredRows();
+        const byDay = new Map();
+        rows.forEach(r=>{
+            const ts = r._epoch; // Use pre-parsed timestamp
+            if (ts==null) return;
+            const d = new Date(ts);
+            const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+            if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
+            const a = byDay.get(key);
+            const dR = num(r[HEADERS[3]]);
+            const eR = num(r[HEADERS[4]]);
+            const fR = num(r[HEADERS[5]]);
+            if (!isNaN(dR)) { a.dSum+=dR; a.dCnt++; }
+            if (!isNaN(eR)) { a.eSum+=eR; a.eCnt++; }
+            if (!isNaN(fR)) { a.fSum+=fR; a.fCnt++; }
+        });
+        const arr = [...byDay.entries()].sort((a,b)=> new Date(a[0]) - new Date(b[0]))
+            .map(([k,v]) => [new Date(k), v.dCnt?v.dSum/v.dCnt:null, v.eCnt?v.eSum/v.eCnt:null, v.fCnt?v.fSum/v.fCnt:null]);
+
+        const dt = new google.visualization.DataTable();
+        dt.addColumn("date", "Date");
+        dt.addColumn("number","Average Lecture Satisfaction");
+        dt.addColumn("number","Average Concept Understandability");
+        dt.addColumn("number","Average Faculty Approachability");
+        dt.addRows(arr);
+        const opts = { legend:{position:"top"}, height:320, chartArea:{left:48, top:36, right:8, bottom:40}, hAxis:{format:"MMM d"}, vAxis:{viewWindow:{min:0}}, lineWidth:3, pointSize:4 };
+        new google.visualization.LineChart(document.getElementById("trendChart")).draw(dt, opts);
+    }
+
+    function drawDist(){
+        const rows = filteredRows();
+        const counts = new Map();
+        rows.forEach(r=>{
+            // Use columns D, E, F by their fixed position (index 3, 4, 5)
+            [HEADERS[3], HEADERS[4], HEADERS[5]].forEach(header => {
+                if (!header) return; // Skip if column doesn't exist
+                const v = num(r[header]);
+                if (!isNaN(v)) counts.set(Math.round(v), (counts.get(Math.round(v))||0)+1);
             });
+        });
+        const arr = [["Rating","Count"], ...[...counts.entries()].sort((a,b)=>a[0]-b[0]).map(([k,v])=>[String(k), v])];
+        const dt = google.visualization.arrayToDataTable(arr);
+        const opts = { legend:{position:"none"}, height:320, chartArea:{left:48, top:16, right:8, bottom:40}, hAxis:{title:"Rating"}, vAxis:{title:"Count", minValue:0} };
+        new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
+    }
 
-            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            const url = URL.createObjectURL(blob);
-            link.setAttribute("href", url);
-            link.setAttribute("download", "dashboard_export.csv");
-            link.style.visibility = 'hidden';
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
+    function renderTable(){
+        const rows = filteredRows();
+        const start = (page-1)*pageSize;
+        const slice = rows.slice(start, start+pageSize);
+
+        const thead = document.getElementById("tableHead");
+        const tbody = document.getElementById("tableBody");
+        const noResults = document.getElementById("noResults");
+        
+        thead.innerHTML = "";
+        tbody.innerHTML = "";
+
+        if (rows.length === 0) {
+            noResults.style.display = 'block';
+            thead.style.display = 'none';
+        } else {
+            noResults.style.display = 'none';
+            thead.style.display = '';
+            const trH = document.createElement("tr");
+            HEADERS.forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
+            thead.appendChild(trH);
+
+            slice.forEach(r=>{
+                const tr = document.createElement("tr");
+                HEADERS.forEach(h => { const td=document.createElement("td"); td.textContent = cellToText(r[h]); tr.appendChild(td); });
+                tbody.appendChild(tr);
+            });
         }
 
-        // --- HELPER FUNCTIONS ---
-        function numericCol(rows, colName) {
-            if (!HEADERS.includes(colName)) return [];
-            return rows.map(r => num(r[colName])).filter(v => !isNaN(v));
+        document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
+        document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
+    }
+    
+    function numericCol(rows, colName) {
+        if (!HEADERS.includes(colName)) return [];
+        const vals = [];
+        for (const r of rows) {
+            const v = num(r[colName]);
+            if (!isNaN(v)) vals.push(v);
         }
-        function cleanHeaders(arr) { return arr.map(h => String(h).replace(/^\uFEFF/, "").trim()); }
-        function num(v){ if (v==null||v==="") return NaN; const n=Number(String(v).replace(/[^\d.\-]/g,"")); return isNaN(n)?NaN:n; }
-        function toEpoch(cell){
-            if (cell==null||cell==="") return null;
-            const n = Number(cell);
-            if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
-                const base = Date.UTC(1899,11,30);
-                return base + Math.round(n*86400000);
-            }
-            const p = Date.parse(cell);
-            if (!isNaN(p)) return p;
-            const m = String(cell).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
-            if (m){ const d=+m[1], mo=+m[2]-1, y=(+m[3]<100?2000+ +m[3]:+m[3]); const hh=+(m[4]||0), mm=+(m[5]||0), ss=+(m[6]||0); return Date.UTC(y,mo,d,hh,mm,ss); }
-            return null;
+        return vals;
+    }
+
+    function cleanHeaders(arr) {
+        return arr.map(h => String(h).replace(/^\uFEFF/, "").trim());
+    }
+
+    function num(v){ if (v==null||v==="") return NaN; const n=Number(String(v).replace(/[^\d.\-]/g,"")); return isNaN(n)?NaN:n; }
+    function toEpoch(cell){
+        if (cell==null||cell==="") return null;
+        const n = Number(cell);
+        if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
+            const base = Date.UTC(1899,11,30);
+            return base + Math.round(n*86400000);
         }
-        function fmt(n){ return (n==null||isNaN(n)) ? "—" : (Math.round(n*100)/100).toFixed(2); }
-        function setText(id, t){ const el = document.getElementById(id); if (el) el.textContent = t; }
-        function cellToText(c){ return c==null ? "" : String(c); }
-    </script>
+        const p = Date.parse(cell);
+        if (!isNaN(p)) return p;
+        const m = String(cell).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+        if (m){ const d=+m[1], mo=+m[2]-1, y=(+m[3]<100?2000+ +m[3]:+m[3]); const hh=+(m[4]||0), mm=+(m[5]||0), ss=+(m[6]||0); return Date.UTC(y,mo,d,hh,mm,ss); }
+        return null;
+    }
+    function fmt(n){ return (n==null||isNaN(n)) ? "—" : (Math.round(n*100)/100).toFixed(2); }
+    function setText(id, t){ document.getElementById(id).textContent = t; }
+    function cellToText(c){ return c==null ? "" : String(c); }
+
+  </script>
 </body>
 </html>
