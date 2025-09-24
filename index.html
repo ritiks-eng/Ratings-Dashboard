@@ -270,13 +270,18 @@
       </div>
 
       <div class="card" style="margin-top:16px;">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex; flex-wrap: wrap; justify-content:space-between; align-items:center; gap: 12px;">
           <div class="label muted">Feedbacks</div>
-          <div class="pager">
-            <span class="badge" id="rowCount">0</span>
-            <button id="prevBtn">Prev</button>
-            <span id="pageInfo" class="muted">–</span>
-            <button id="nextBtn">Next</button>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-left: auto;">
+            <div class="control" style="min-width: 240px;">
+              <input type="search" id="searchInput" placeholder="Search feedbacks...">
+            </div>
+            <div class="pager">
+              <span class="badge" id="rowCount">0</span>
+              <button id="prevBtn">Prev</button>
+              <span id="pageInfo" class="muted">–</span>
+              <button id="nextBtn">Next</button>
+            </div>
           </div>
         </div>
         <div class="sep"></div>
@@ -343,6 +348,8 @@
         // --- FILTER & PAGER LOGIC ---
         document.getElementById("applyBtn").addEventListener("click", handleFilterChange);
         document.getElementById("timeFilter").addEventListener("change", handleTimeFilterChange);
+        document.getElementById("searchInput").addEventListener("input", handleFilterChange);
+
         document.getElementById("dateFrom").addEventListener("change", () => {
             document.getElementById("timeFilter").value = 'custom';
             handleTimeFilterChange();
@@ -566,6 +573,7 @@
         const dtEpoch = toVal ? new Date(toVal + 'T23:59:59.999Z').getTime() : null;
         const src = document.getElementById("sourceFilter").value || "";
         const onlyFlagged = document.getElementById("onlyFlagged").checked;
+        const searchTerm = document.getElementById("searchInput").value.toLowerCase();
 
         return MASTER.filter(r => {
             if (src && r["Source Sheet"] !== src) return false;
@@ -576,6 +584,13 @@
             const ts = r._epoch;
             if (dfEpoch && (ts == null || ts < dfEpoch)) return false;
             if (dtEpoch && (ts == null || ts > dtEpoch)) return false;
+            
+            if (searchTerm) {
+                return Object.values(r).some(val => 
+                    String(val).toLowerCase().includes(searchTerm)
+                );
+            }
+
             return true;
         }).sort((a,b) => (b._epoch || 0) - (a._epoch || 0));
     }
@@ -644,6 +659,7 @@
             const ts = r._epoch;
             if (ts==null) return;
             const d = new Date(ts);
+            // Use UTC methods to create a consistent daily key, regardless of browser timezone
             const key = `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}-${String(d.getUTCDate()).padStart(2,"0")}`;
             
             if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
@@ -813,4 +829,5 @@
   </script>
 </body>
 </html>
+
 
