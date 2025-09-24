@@ -6,68 +6,122 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Google Charts -->
   <script src="https://www.gstatic.com/charts/loader.js"></script>
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Font Awesome for Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css">
   <style>
-    :root{--bg:#f5f5f7;--card:#fff;--text:#111;--muted:#6e6e73;--ring:rgba(0,0,0,.08);--accent:#0071e3;--shadow:0 8px 24px rgba(0,0,0,.08);--radius:18px}
-    *{box-sizing:border-box} body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial;background:linear-gradient(180deg,#fafafa 0%,var(--bg) 100%);color:var(--text)}
-    header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(180%) blur(12px);background:rgba(255,255,255,.7);border-bottom:1px solid rgba(0,0,0,.06)}
-    .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}.title{display:flex;gap:12px;align-items:baseline} h1{font-size:28px;margin:8px 0;font-weight:700;letter-spacing:-.02em}.subtitle{color:var(--muted);font-size:14px}
-    .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-4{grid-template-columns:repeat(4,1fr)}}
-    .card{background:var(--card);border:1px solid var(--ring);border-radius:18px;box-shadow:var(--shadow);padding:16px}
+    :root {
+        /* Graphite Light Theme */
+        --bg: #f5f5f7;
+        --card-bg: rgba(255, 255, 255, 0.7);
+        --text: #1d1d1f;
+        --text-muted: #6e6e73;
+        --ring: rgba(0, 0, 0, 0.08);
+        --accent: #0071e3;
+        --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        --radius: 18px;
+        --header-bg: rgba(255, 255, 255, 0.6);
+        --chart-grid: rgba(0,0,0,0.07);
+        --chart-text: #555;
+    }
+
+    body.dark-mode {
+        /* Midnight Dark Theme */
+        --bg: #111;
+        --card-bg: rgba(29, 29, 31, 0.7);
+        --text: #f5f5f7;
+        --text-muted: #86868b;
+        --ring: rgba(255, 255, 255, 0.12);
+        --accent: #0a84ff;
+        --shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+        --header-bg: rgba(29, 29, 31, 0.6);
+        --chart-grid: rgba(255,255,255,0.1);
+        --chart-text: #999;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:'Inter', -apple-system, BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale; transition: background-color 0.3s ease, color 0.3s ease;}
+    header{position:sticky;top:0;z-index:10;backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);background:var(--header-bg);border-bottom:1px solid var(--ring);transition: background-color 0.3s ease, border-color 0.3s ease;}
+    .wrap{max-width:1200px;margin:0 auto;padding:16px 20px}
+    .header-content{display:flex;justify-content:space-between;align-items:center;}
+    .title{display:flex;gap:16px;align-items:center}
+    .title i { font-size: 24px; color: var(--text-muted); }
+    h1{font-size:24px;margin:0;font-weight:700;letter-spacing:-.025em}
+    .subtitle{color:var(--muted);font-size:14px;font-weight:500;}
+    .header-meta { display: flex; align-items: center; gap: 16px; }
+    .live-indicator { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    .live-dot { width: 8px; height: 8px; background-color: #34c759; border-radius: 50%; animation: pulse 2s infinite cubic-bezier(0.4, 0, 0.6, 1); }
+    @keyframes pulse { 50% { opacity: 0.3; } }
+    .header-date { font-size: 13px; color: var(--text-muted); font-weight: 500; }
+    @media (max-width: 768px) { .header-date, .subtitle { display: none; } h1 { font-size: 20px; } }
+    .grid{display:grid;gap:16px}@media(min-width:900px){.grid-2{grid-template-columns:1fr 1fr}}@media(min-width:1100px){.grid-3{grid-template-columns:repeat(3,1fr)}}
+    .card{background:var(--card-bg);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--ring);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px; transition: all 0.3s ease;}
     .controls{display:flex;flex-wrap:wrap;gap:12px;align-items:end}.control{display:grid;gap:6px;min-width:180px}
-    label{font-size:12px;color:var(--muted)} input,select,button{appearance:none;background:#fff;border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font:inherit}
+    label{font-size:12px;color:var(--muted);font-weight:500;} input,select,button{appearance:none;background:var(--card-bg);border:1px solid var(--ring);border-radius:12px;padding:10px 12px;font:inherit;font-weight:500;color:var(--text);transition: all 0.2s ease;}
     input:focus,select:focus{box-shadow:0 0 0 4px rgba(0,113,227,.15);border-color:var(--accent)}
-    button.primary{background:var(--accent);color:#fff;border:none;padding:10px 14px;border-radius:12px;font-weight:600;cursor:pointer}
-    .kpi{display:grid;gap:4px}.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:28px;font-weight:700}.kpi .sub{color:var(--muted);font-size:12px}
-    .chart{height:320px}.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--ring)} table{border-collapse:collapse;width:100%;background:#fff}
-    th,td{padding:10px 12px;border-bottom:1px solid #efefef;font-size:13px} th{text-align:left;color:var(--muted);font-weight:600;background:#fafafa;position:sticky;top:0}
+    button{cursor:pointer}
+    button.primary{background:var(--accent);color:#fff;border:none;padding:10px 16px;border-radius:12px;font-weight:600;}
+    button.primary:hover{opacity:0.85;}
+    .theme-toggle { background:transparent; border:none; color: var(--text-muted); font-size:18px; padding:8px; border-radius:99px; width:40px; height:40px; display:flex; align-items:center; justify-content:center;}
+    .theme-toggle:hover { background:var(--ring); color: var(--text); }
+    .kpi{display:grid;gap:4px;}.kpi .label{color:var(--muted);font-size:12px;font-weight:500;}.kpi .value{font-size:32px;font-weight:700;letter-spacing:-.02em;transition: color 0.3s ease;}.kpi .sub{color:var(--muted);font-size:12px}
+    .kpi-stack { display: grid; gap: 16px; align-content: start; }
+    .kpi-small-standalone { text-align: left; }
+    .kpi-small-standalone .label{color:var(--muted);font-size:12px;margin-bottom:4px;font-weight:500;}
+    .kpi-small-standalone .value{font-size:28px;font-weight:700;letter-spacing:-.02em;}
+    .kpi-small-standalone .sub{color:var(--muted);font-size:12px;font-weight:500;}
+    .chart{height:320px}.table-wrap{overflow:auto;border-radius:12px;border:1px solid var(--ring)} table{border-collapse:collapse;width:100%;background:var(--card-bg);transition: background-color 0.3s ease;}
+    th,td{padding:10px 12px;border-bottom:1px solid var(--ring);font-size:13px;transition: border-color 0.3s ease;} th{text-align:left;color:var(--muted);font-weight:600;background:rgba(0,0,0,0.02);position:sticky;top:0;font-size:12px;letter-spacing:.01em;text-transform:uppercase;}
+    body.dark-mode th { background: rgba(255,255,255,0.05); }
+    td.flagged { background: #fffbe6; color: #c88f00; font-weight: 600; }
+    body.dark-mode td.flagged { background: rgba(252, 211, 77, 0.1); color: #facc15; }
     .badge{font-size:12px;padding:2px 8px;border-radius:999px;background:#eef5ff;color:#0b5bd3;border:1px solid #d8e7ff}
-    .muted{color:#6e6e73}.sep{height:1px;background:rgba(0,0,0,.06);margin:12px 0}.pager{display:flex;gap:8px;align-items:center}
+    body.dark-mode .badge { background: rgba(10, 132, 255, 0.15); color: #0a84ff; border: 1px solid rgba(10, 132, 255, 0.3); }
+    .muted{color:var(--muted)}.sep{height:1px;background:var(--ring);margin:16px 0;transition: background-color 0.3s ease;}.pager{display:flex;gap:8px;align-items:center}
     .error-banner{background:#fff2f2;border:1px solid #ffcccc;color:#d8000c;padding:12px;border-radius:12px;margin-bottom:16px;font-size:14px;}
     .error-banner ul{margin:8px 0 0 20px;padding:0;}
+    body.dark-mode .error-banner { background: rgba(255, 69, 58, 0.15); border-color: rgba(255, 69, 58, 0.3); color: #ff453a; }
+    .loader{position:fixed;top:16px;right:16px;width:18px;height:18px;border:2px solid var(--muted);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;opacity:0;transition:opacity .3s;z-index:20}
+    .loader.visible{opacity:1}
+    @keyframes spin{to{transform:rotate(360deg)}}
 
     /* Custom Checkbox for a cleaner, more consistent UI */
     input[type="checkbox"] {
-        appearance: none;
-        -webkit-appearance: none;
-        position: relative;
-        width: 1.25rem;
-        height: 1.25rem;
-        border: 1.5px solid var(--ring);
-        border-radius: 9999px;
-        cursor: pointer;
-        transition: all 0.2s ease-in-out;
-        flex-shrink: 0;
+        appearance: none; -webkit-appearance: none; position: relative; width: 1.25rem; height: 1.25rem;
+        border: 1.5px solid var(--ring); border-radius: 9999px; cursor: pointer; transition: all 0.2s ease-in-out; flex-shrink: 0;
     }
-    input[type="checkbox"]:checked {
-        background-color: var(--accent);
-        border-color: var(--accent);
+    input[type="checkbox"]:checked { background-color: var(--accent); border-color: var(--accent); }
+    input[type="checkbox"]::before { content: ''; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%) scale(0);
+        width: 0.5rem; height: 0.5rem; border-radius: 9999px; background-color: white; transition: transform 0.2s ease-in-out;
     }
-    input[type="checkbox"]::before {
-        content: '';
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%) scale(0);
-        width: 0.5rem;
-        height: 0.5rem;
-        border-radius: 9999px;
-        background-color: white;
-        transition: transform 0.2s ease-in-out;
-    }
-    input[type="checkbox"]:checked::before {
-        transform: translate(-50%, -50%) scale(1);
-    }
-    input[type="checkbox"]:focus {
-        box-shadow: 0 0 0 4px rgba(0,113,227,.15);
-    }
+    input[type="checkbox"]:checked::before { transform: translate(-50%, -50%) scale(1); }
+    input[type="checkbox"]:focus { box-shadow: 0 0 0 4px rgba(0,113,227,.15); }
   </style>
 </head>
 <body>
+  <div id="loader" class="loader"></div>
   <header>
     <div class="wrap">
-      <div class="title">
-        <h1>Ratings Dashboard</h1>
-        <span class="subtitle">Live from Google Sheets</span>
+      <div class="header-content">
+          <div class="title">
+            <i class="fa-solid fa-chart-pie"></i>
+            <div>
+                <h1>Ratings Dashboard</h1>
+                <span class="subtitle">Live from Google Sheets</span>
+            </div>
+          </div>
+          <div class="header-meta">
+              <div class="live-indicator">
+                  <div class="live-dot"></div>
+                  <span>Live</span>
+              </div>
+              <div id="header-date" class="header-date"></div>
+              <button class="theme-toggle" id="themeToggleBtn" title="Toggle Theme">
+                <i class="fa-solid fa-sun"></i>
+              </button>
+          </div>
       </div>
     </div>
   </header>
@@ -95,11 +149,40 @@
       </div>
     </div>
 
-    <div class="grid grid-4" style="margin-top:16px;">
-      <div class="card kpi"><div class="label">Average Lecture Satisfaction</div><div class="value" id="avgD">—</div></div>
-      <div class="card kpi"><div class="label">Average Concept Understandability</div><div class="value" id="avgE">—</div></div>
-      <div class="card kpi"><div class="label">Average Faculty Approachability</div><div class="value" id="avgF">—</div></div>
-      <div class="card kpi"><div class="label">% less than 7</div><div class="value" id="pctFlagged">—</div><div class="sub muted" id="cntFlagged">—</div></div>
+    <div class="grid grid-3" style="margin-top:16px;">
+      <div class="kpi-stack">
+        <div class="card kpi">
+          <div class="label">Average Lecture Satisfaction</div>
+          <div class="value" id="avgD">—</div>
+        </div>
+        <div class="card kpi-small-standalone">
+          <div class="label">Lecture % &lt; 7</div>
+          <div class="value" id="pctFlaggedD">—</div>
+          <div class="sub muted" id="cntFlaggedD">—</div>
+        </div>
+      </div>
+      <div class="kpi-stack">
+        <div class="card kpi">
+          <div class="label">Average Concept Understandability</div>
+          <div class="value" id="avgE">—</div>
+        </div>
+        <div class="card kpi-small-standalone">
+          <div class="label">Concept % &lt; 7</div>
+          <div class="value" id="pctFlaggedE">—</div>
+          <div class="sub muted" id="cntFlaggedE">—</div>
+        </div>
+      </div>
+      <div class="kpi-stack">
+        <div class="card kpi">
+          <div class="label">Average Faculty Approachability</div>
+          <div class="value" id="avgF">—</div>
+        </div>
+        <div class="card kpi-small-standalone">
+          <div class="label">Faculty % &lt; 7</div>
+          <div class="value" id="pctFlaggedF">—</div>
+          <div class="sub muted" id="cntFlaggedF">—</div>
+        </div>
+      </div>
     </div>
 
     <div class="grid grid-2" style="margin-top:16px;">
@@ -133,8 +216,6 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbx_w-Sq22CxSatJLcMFQ7WAovZjQ05vPNMOk-orVWH3-s7SBYm8DRRhA_5Xrao6HdBbng/exec";
 
     const TIMESTAMP_HEADER = "Timestamp";
-    // RATING_COLS is no longer used, we will use fixed column positions D, E, F (indices 3, 4, 5)
-
     let page = 1, pageSize = 200;
     let MASTER = [];
     let HEADERS = [];
@@ -142,28 +223,62 @@
     google.charts.load("current", { "packages": ["corechart"] });
 
     document.addEventListener("DOMContentLoaded", () => {
+        const loader = document.getElementById("loader");
         google.charts.setOnLoadCallback(init);
+        updateHeaderDate();
         
+        // --- THEME LOGIC ---
+        const themeToggleBtn = document.getElementById("themeToggleBtn");
+        const themeIcon = themeToggleBtn.querySelector("i");
+        
+        const applyTheme = (theme) => {
+            if (theme === 'dark') {
+                document.body.classList.add("dark-mode");
+                themeIcon.classList.remove("fa-sun");
+                themeIcon.classList.add("fa-moon");
+            } else {
+                document.body.classList.remove("dark-mode");
+                themeIcon.classList.remove("fa-moon");
+                themeIcon.classList.add("fa-sun");
+            }
+            if (MASTER.length > 0) {
+                 const rows = filteredRows();
+                 drawTrend(rows);
+                 drawDist(rows);
+            }
+        };
+
+        const preferredTheme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        applyTheme(preferredTheme);
+
+        themeToggleBtn.addEventListener("click", () => {
+            const newTheme = document.body.classList.contains("dark-mode") ? 'light' : 'dark';
+            localStorage.setItem('theme', newTheme);
+            applyTheme(newTheme);
+        });
+
+        // --- FILTER & PAGER LOGIC ---
         document.getElementById("applyBtn").addEventListener("click", handleFilterChange);
         document.getElementById("timeFilter").addEventListener("change", handleTimeFilterChange);
         document.getElementById("dateFrom").addEventListener("change", () => {
-            const timeFilter = document.getElementById("timeFilter");
-            if (timeFilter.value !== 'custom') {
-                timeFilter.value = 'custom';
-                handleTimeFilterChange(); // This will re-enable the date inputs
-            }
+            document.getElementById("timeFilter").value = 'custom';
+            handleTimeFilterChange();
         });
         document.getElementById("dateTo").addEventListener("change", () => {
-            const timeFilter = document.getElementById("timeFilter");
-            if (timeFilter.value !== 'custom') {
-                timeFilter.value = 'custom';
-                handleTimeFilterChange(); // This will re-enable the date inputs
-            }
+            document.getElementById("timeFilter").value = 'custom';
+            handleTimeFilterChange();
         });
 
         document.getElementById("prevBtn").addEventListener("click", () => { if (page > 1) { page--; renderTable(); } });
         document.getElementById("nextBtn").addEventListener("click", () => { if ((page * pageSize) < filteredRows().length) { page++; renderTable(); } });
     });
+
+    function updateHeaderDate() {
+        const dateEl = document.getElementById("header-date");
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        if(dateEl) dateEl.textContent = now.toLocaleDateString('en-US', options);
+    }
 
     function handleFilterChange() {
         page = 1;
@@ -174,15 +289,13 @@
         const selection = document.getElementById("timeFilter").value;
         const dateFromInput = document.getElementById("dateFrom");
         const dateToInput = document.getElementById("dateTo");
-        
         const now = new Date();
         let startDate, endDate;
-
         const formatDate = (date) => date ? date.toISOString().split('T')[0] : "";
 
         switch (selection) {
             case "this-week": {
-                const day = now.getDay() || 7; // Sunday is 0, make it 7
+                const day = now.getDay() || 7;
                 startDate = new Date(now);
                 startDate.setDate(now.getDate() - day + 1);
                 endDate = new Date();
@@ -191,9 +304,9 @@
             case "last-week": {
                 const day = now.getDay() || 7;
                 endDate = new Date(now);
-                endDate.setDate(now.getDate() - day); // Last Sunday
+                endDate.setDate(now.getDate() - day);
                 startDate = new Date(endDate);
-                startDate.setDate(endDate.getDate() - 6); // Monday of last week
+                startDate.setDate(endDate.getDate() - 6);
                 break;
             }
             case "this-month": {
@@ -206,12 +319,7 @@
                 endDate = new Date(now.getFullYear(), now.getMonth(), 0);
                 break;
             }
-            case "all":
-            default: {
-                startDate = null;
-                endDate = null;
-                break;
-            }
+            case "all": default: { startDate = null; endDate = null; break; }
         }
 
         if (selection !== 'custom') {
@@ -226,24 +334,21 @@
     }
 
     async function init() {
+        loader.classList.add("visible");
         const errorContainer = document.getElementById("errorContainer");
-        errorContainer.innerHTML = ''; // Clear previous errors
+        errorContainer.innerHTML = ''; 
 
         if (!API_URL || API_URL === "YOUR_APPS_SCRIPT_URL_GOES_HERE") {
-             errorContainer.innerHTML = `<div class="error-banner"><strong>Configuration Error:</strong> Please paste your Google Apps Script URL into the API_URL constant in the script.</div>`;
-             return;
+            errorContainer.innerHTML = `<div class="error-banner"><strong>Configuration Error:</strong> Please set the API_URL.</div>`;
+            loader.classList.remove("visible");
+            return;
         }
 
         try {
             const response = await fetch(API_URL);
-            if (!response.ok) {
-                throw new Error(`The Apps Script returned an error (Status: ${response.status})`);
-            }
+            if (!response.ok) throw new Error(`API returned status: ${response.status}`);
             const data = await response.json();
-
-            if (data.status === 'error') {
-                throw new Error(`Apps Script execution failed: ${data.message}`);
-            }
+            if (data.status === 'error') throw new Error(`Apps Script failed: ${data.message}`);
             
             const combined = [];
             let headerRef = null;
@@ -252,20 +357,15 @@
 
             sheetNames.forEach(sheetName => {
                 const sheetRows = data[sheetName];
-                if (!sheetRows || sheetRows.length < 2) return; 
-
+                if (!sheetRows || sheetRows.length < 2) return;
                 const headers = cleanHeaders(sheetRows[0]);
                 const rows = sheetRows.slice(1);
-
                 if (!headerRef) {
                     headerRef = headers;
-                } else {
-                    if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
-                         headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
-                         return;
-                    }
+                } else if (headers.length !== headerRef.length || headers.some((h, i) => h !== headerRef[i])) {
+                    headerValidationErrors.push(`'${sheetName}' has different columns and was skipped.`);
+                    return;
                 }
-                
                 rows.forEach(r => {
                     const obj = {};
                     headerRef.forEach((h, i) => obj[h] = r[i] ?? "");
@@ -274,21 +374,12 @@
                 });
             });
 
-            // Pre-process timestamps for performance and reliability
-            combined.forEach(r => {
-                r._epoch = toEpoch(r[TIMESTAMP_HEADER]);
-            });
+            combined.forEach(r => { r._epoch = toEpoch(r[TIMESTAMP_HEADER]); });
 
             if (headerValidationErrors.length > 0) {
-                let errorHTML = '<div class="error-banner"><strong>Data Loading Warning:</strong><ul>';
-                headerValidationErrors.forEach(e => errorHTML += `<li>${e}</li>`);
-                errorHTML += '</ul></div>';
-                errorContainer.innerHTML = errorHTML;
+                errorContainer.innerHTML = `<div class="error-banner"><strong>Data Warning:</strong><ul>${headerValidationErrors.map(e => `<li>${e}</li>`).join('')}</ul></div>`;
             }
-
-            if (!headerRef) {
-                throw new Error("Could not load any data. Please check your Apps Script and ensure the underlying sheets have data.");
-            }
+            if (!headerRef) throw new Error("No valid data loaded. Check sheet formats.");
 
             HEADERS = headerRef.concat("Source Sheet");
             MASTER = combined;
@@ -299,92 +390,91 @@
                 const o = document.createElement("option"); o.value = s; o.textContent = s; sel.appendChild(o);
             });
 
-            handleTimeFilterChange(); // Set initial state
+            handleTimeFilterChange();
             renderAll();
-
+            loader.classList.remove("visible");
         } catch (e) {
-            console.error("Dashboard initialization failed:", e);
+            console.error("Initialization failed:", e);
             errorContainer.innerHTML = `<div class="error-banner"><strong>Fatal Error:</strong> ${e.message}</div>`;
+            loader.classList.remove("visible");
         }
     }
     
     function filteredRows(){
         const fromVal = document.getElementById("dateFrom").value;
         const toVal = document.getElementById("dateTo").value;
-        
-        // Treat YYYY-MM-DD as UTC to avoid timezone issues for robust filtering
         const dfEpoch = fromVal ? new Date(fromVal + 'T00:00:00.000Z').getTime() : null;
         const dtEpoch = toVal ? new Date(toVal + 'T23:59:59.999Z').getTime() : null;
-        
         const src = document.getElementById("sourceFilter").value || "";
         const onlyFlagged = document.getElementById("onlyFlagged").checked;
 
-        const rows = MASTER.filter(r => {
+        return MASTER.filter(r => {
             if (src && r["Source Sheet"] !== src) return false;
             if (onlyFlagged) {
-                // Check columns D, E, F by their fixed position (index 3, 4, 5)
                 const ratingHeaders = [HEADERS[3], HEADERS[4], HEADERS[5]].filter(Boolean);
-                const anyLT7 = ratingHeaders.some(header => num(r[header]) < 7);
-                if (!anyLT7) return false;
+                if (!ratingHeaders.some(header => num(r[header]) < 7)) return false;
             }
-            const ts = r._epoch; // Use pre-parsed timestamp
+            const ts = r._epoch;
             if (dfEpoch && (ts == null || ts < dfEpoch)) return false;
             if (dtEpoch && (ts == null || ts > dtEpoch)) return false;
             return true;
-        }).sort((a,b)=>{
-            const ta = a._epoch; // Use pre-parsed timestamp
-            const tb = b._epoch; // Use pre-parsed timestamp
-            if (ta==null && tb==null) return 0;
-            if (ta==null) return 1;
-            if (tb==null) return -1;
-            return tb - ta; 
-        });
-
-        return rows;
+        }).sort((a,b) => (b._epoch || 0) - (a._epoch || 0));
     }
 
     function renderAll(){
-        renderKPIs();
-        drawTrend();
-        drawDist();
-        renderTable();
+        const rows = filteredRows();
+        renderKPIs(rows);
+        drawTrend(rows);
+        drawDist(rows);
+        renderTable(rows);
     }
 
-    function renderKPIs(){
-        const rows = filteredRows();
-        // Access columns D, E, F by their fixed position (index 3, 4, 5)
-        const headerD = HEADERS[3];
-        const headerE = HEADERS[4];
-        const headerF = HEADERS[5];
-
+    function renderKPIs(rows){
+        const [headerD, headerE, headerF] = [HEADERS[3], HEADERS[4], HEADERS[5]];
         const dVals = numericCol(rows, headerD);
         const eVals = numericCol(rows, headerE);
         const fVals = numericCol(rows, headerF);
         const avg = arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null;
+        
+        animateValue("avgD", avg(dVals));
+        animateValue("avgE", avg(eVals));
+        animateValue("avgF", avg(fVals));
 
-        setText("avgD", fmt(avg(dVals)));
-        setText("avgE", fmt(avg(eVals)));
-        setText("avgF", fmt(avg(fVals)));
+        const flaggedD = dVals.filter(v => v < 7).length;
+        const flaggedE = eVals.filter(v => v < 7).length;
+        const flaggedF = fVals.filter(v => v < 7).length;
 
-        const ratingHeaders = [headerD, headerE, headerF].filter(Boolean);
-        const flagged = rows.filter(r => ratingHeaders.some(h => num(r[h]) < 7)).length;
-        setText("pctFlagged", rows.length ? (Math.round((flagged/rows.length)*1000)/10)+"%" : "—");
-        setText("cntFlagged", rows.length ? `${flagged} of ${rows.length}` : "—");
+        setText("pctFlaggedD", dVals.length ? (Math.round((flaggedD/dVals.length)*1000)/10)+"%" : "—");
+        setText("cntFlaggedD", dVals.length ? `${flaggedD} of ${dVals.length}` : "—");
+        setText("pctFlaggedE", eVals.length ? (Math.round((flaggedE/eVals.length)*1000)/10)+"%" : "—");
+        setText("cntFlaggedE", eVals.length ? `${flaggedE} of ${eVals.length}` : "—");
+        setText("pctFlaggedF", fVals.length ? (Math.round((flaggedF/fVals.length)*1000)/10)+"%" : "—");
+        setText("cntFlaggedF", fVals.length ? `${flaggedF} of ${fVals.length}` : "—");
+    }
+    
+    function getChartOptions(extraOptions = {}) {
+        const isDark = document.body.classList.contains('dark-mode');
+        const baseOptions = {
+            backgroundColor: 'transparent',
+            chartArea:{left:48, top:48, right:16, bottom:40, width:'100%', height:'100%'},
+            legend: { position: "top", textStyle: { color: isDark ? '#EEE' : '#333' } },
+            hAxis: { textStyle: { color: isDark ? '#999' : '#555' }, gridlines: { color: 'transparent' } },
+            vAxis: { textStyle: { color: isDark ? '#999' : '#555' }, gridlines: { color: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }, viewWindow: { min: 0 } },
+            animation: { startup: true, duration: 1000, easing: 'out' },
+        };
+        return {...baseOptions, ...extraOptions};
     }
 
-    function drawTrend(){
-        const rows = filteredRows();
+    function drawTrend(rows){
         const byDay = new Map();
         rows.forEach(r=>{
-            const ts = r._epoch; // Use pre-parsed timestamp
+            const ts = r._epoch;
             if (ts==null) return;
             const d = new Date(ts);
             const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
             if (!byDay.has(key)) byDay.set(key,{dSum:0,dCnt:0,eSum:0,eCnt:0,fSum:0,fCnt:0});
             const a = byDay.get(key);
-            const dR = num(r[HEADERS[3]]);
-            const eR = num(r[HEADERS[4]]);
-            const fR = num(r[HEADERS[5]]);
+            const dR = num(r[HEADERS[3]]); const eR = num(r[HEADERS[4]]); const fR = num(r[HEADERS[5]]);
             if (!isNaN(dR)) { a.dSum+=dR; a.dCnt++; }
             if (!isNaN(eR)) { a.eSum+=eR; a.eCnt++; }
             if (!isNaN(fR)) { a.fSum+=fR; a.fCnt++; }
@@ -394,42 +484,49 @@
 
         const dt = new google.visualization.DataTable();
         dt.addColumn("date", "Date");
-        dt.addColumn("number","Average Lecture Satisfaction");
-        dt.addColumn("number","Average Concept Understandability");
-        dt.addColumn("number","Average Faculty Approachability");
+        dt.addColumn("number","Lecture Satisfaction");
+        dt.addColumn("number","Concept Understandability");
+        dt.addColumn("number","Faculty Approachability");
         dt.addRows(arr);
-        const opts = { legend:{position:"top"}, height:320, chartArea:{left:48, top:36, right:8, bottom:40}, hAxis:{format:"MMM d"}, vAxis:{viewWindow:{min:0}}, lineWidth:3, pointSize:4 };
+        
+        const opts = getChartOptions({
+            lineWidth:3, pointSize:4,
+            colors: ['#4285F4', '#DB4437', '#F4B400']
+        });
         new google.visualization.LineChart(document.getElementById("trendChart")).draw(dt, opts);
     }
 
-    function drawDist(){
-        const rows = filteredRows();
-        const counts = new Map();
+    function drawDist(rows){
+        const dCounts = new Map(), eCounts = new Map(), fCounts = new Map();
+        const [headerD, headerE, headerF] = [HEADERS[3], HEADERS[4], HEADERS[5]];
+
         rows.forEach(r=>{
-            // Use columns D, E, F by their fixed position (index 3, 4, 5)
-            [HEADERS[3], HEADERS[4], HEADERS[5]].forEach(header => {
-                if (!header) return; // Skip if column doesn't exist
-                const v = num(r[header]);
-                if (!isNaN(v)) counts.set(Math.round(v), (counts.get(Math.round(v))||0)+1);
-            });
+            const dVal = num(r[headerD]), eVal = num(r[headerE]), fVal = num(r[headerF]);
+            if (!isNaN(dVal)) dCounts.set(Math.round(dVal), (dCounts.get(Math.round(dVal))||0)+1);
+            if (!isNaN(eVal)) eCounts.set(Math.round(eVal), (eCounts.get(Math.round(eVal))||0)+1);
+            if (!isNaN(fVal)) fCounts.set(Math.round(fVal), (fCounts.get(Math.round(fVal))||0)+1);
         });
-        const arr = [["Rating","Count"], ...[...counts.entries()].sort((a,b)=>a[0]-b[0]).map(([k,v])=>[String(k), v])];
+
+        const arr = [ ["Rating", "Lecture Satisfaction", "Concept Understandability", "Faculty Approachability"] ];
+        for (let i = 1; i <= 10; i++) {
+            arr.push([ String(i), dCounts.get(i) || 0, eCounts.get(i) || 0, fCounts.get(i) || 0 ]);
+        }
+        
         const dt = google.visualization.arrayToDataTable(arr);
-        const opts = { legend:{position:"none"}, height:320, chartArea:{left:48, top:16, right:8, bottom:40}, hAxis:{title:"Rating"}, vAxis:{title:"Count", minValue:0} };
+        const opts = getChartOptions({
+            colors: ['#4285F4', '#DB4437', '#F4B400'],
+            vAxis: { title:"Count", textStyle: { color: document.body.classList.contains('dark-mode') ? '#999' : '#555' }, gridlines: { color: document.body.classList.contains('dark-mode') ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.07)' }, viewWindow: { min: 0 } },
+            hAxis: { title:"Rating", textStyle: { color: document.body.classList.contains('dark-mode') ? '#999' : '#555' } }
+        });
         new google.visualization.ColumnChart(document.getElementById("distChart")).draw(dt, opts);
     }
 
-    function renderTable(){
-        const rows = filteredRows();
+    function renderTable(rows = null){
+        if (rows === null) rows = filteredRows();
         const start = (page-1)*pageSize;
         const slice = rows.slice(start, start+pageSize);
-
-        const thead = document.getElementById("tableHead");
-        const tbody = document.getElementById("tableBody");
-        const noResults = document.getElementById("noResults");
-        
-        thead.innerHTML = "";
-        tbody.innerHTML = "";
+        const thead = document.getElementById("tableHead"), tbody = document.getElementById("tableBody"), noResults = document.getElementById("noResults");
+        thead.innerHTML = ""; tbody.innerHTML = "";
 
         if (rows.length === 0) {
             noResults.style.display = 'block';
@@ -440,42 +537,36 @@
             const trH = document.createElement("tr");
             HEADERS.forEach(h => { const th=document.createElement("th"); th.textContent=h; trH.appendChild(th); });
             thead.appendChild(trH);
-
             slice.forEach(r=>{
                 const tr = document.createElement("tr");
-                HEADERS.forEach(h => { const td=document.createElement("td"); td.textContent = cellToText(r[h]); tr.appendChild(td); });
+                HEADERS.forEach(h => { 
+                    const td=document.createElement("td"); 
+                    const cellValue = r[h];
+                    td.textContent = cellToText(cellValue);
+                    const isRatingCol = h === HEADERS[3] || h === HEADERS[4] || h === HEADERS[5];
+                    if (isRatingCol && num(cellValue) < 7) td.classList.add("flagged");
+                    tr.appendChild(td); 
+                });
                 tbody.appendChild(tr);
             });
         }
-
         document.getElementById("rowCount").textContent = `${slice.length} / ${rows.length}`;
         document.getElementById("pageInfo").textContent = `Page ${page} of ${Math.max(1, Math.ceil(rows.length/pageSize))}`;
     }
     
     function numericCol(rows, colName) {
         if (!HEADERS.includes(colName)) return [];
-        const vals = [];
-        for (const r of rows) {
-            const v = num(r[colName]);
-            if (!isNaN(v)) vals.push(v);
-        }
-        return vals;
+        return rows.map(r => num(r[colName])).filter(v => !isNaN(v));
     }
-
-    function cleanHeaders(arr) {
-        return arr.map(h => String(h).replace(/^\uFEFF/, "").trim());
-    }
-
+    function cleanHeaders(arr) { return arr.map(h => String(h).replace(/^\uFEFF/, "").trim()); }
     function num(v){ if (v==null||v==="") return NaN; const n=Number(String(v).replace(/[^\d.\-]/g,"")); return isNaN(n)?NaN:n; }
     function toEpoch(cell){
         if (cell==null||cell==="") return null;
         const n = Number(cell);
         if (!isNaN(n) && String(cell).trim()!=="" && !/[a-zA-Z]/.test(String(cell))) {
-            const base = Date.UTC(1899,11,30);
-            return base + Math.round(n*86400000);
+            return Date.UTC(1899,11,30) + Math.round(n*86400000);
         }
-        const p = Date.parse(cell);
-        if (!isNaN(p)) return p;
+        const p = Date.parse(cell); if (!isNaN(p)) return p;
         const m = String(cell).trim().match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})(?:\s+(\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
         if (m){ const d=+m[1], mo=+m[2]-1, y=(+m[3]<100?2000+ +m[3]:+m[3]); const hh=+(m[4]||0), mm=+(m[5]||0), ss=+(m[6]||0); return Date.UTC(y,mo,d,hh,mm,ss); }
         return null;
@@ -483,7 +574,26 @@
     function fmt(n){ return (n==null||isNaN(n)) ? "—" : (Math.round(n*100)/100).toFixed(2); }
     function setText(id, t){ document.getElementById(id).textContent = t; }
     function cellToText(c){ return c==null ? "" : String(c); }
-
+    function animateValue(id, end) {
+        const el = document.getElementById(id);
+        if (end === null || isNaN(end)) { el.textContent = "—"; return; }
+        let start = parseFloat(el.textContent) || 0;
+        if (start === end) { el.textContent = fmt(end); return; }
+        const isInt = Number.isInteger(end), duration = 800, startTime = performance.now();
+        function step(currentTime) {
+            const elapsed = currentTime - startTime;
+            if (elapsed > duration) {
+                el.textContent = isInt ? end : fmt(end);
+            } else {
+                const progress = elapsed / duration;
+                const current = start + (end - start) * progress;
+                el.textContent = isInt ? Math.round(current) : fmt(current);
+                requestAnimationFrame(step);
+            }
+        }
+        requestAnimationFrame(step);
+    }
   </script>
 </body>
 </html>
+
